@@ -47,16 +47,6 @@ SteppingAction::SteppingAction (const string& configFileName)
 
 }*/
 
-int to_int(string name)
-{
-  int Result; // int which will contain the result
-  stringstream convert(name);
-  string dummy;
-  convert >> dummy;
-  convert >> Result;
-  return Result;
-}
-
 //---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
 SteppingAction::SteppingAction(DetectorConstruction *detectorConstruction,
@@ -66,6 +56,7 @@ SteppingAction::SteppingAction(DetectorConstruction *detectorConstruction,
 {
   maxtracklength = 500000. * mm;
 
+  // Energy distribution branches
   b_depositedEnergyTotal = CreateTree::Instance()->createBranch<float>("depositedEnergyTotal");
   b_depositedIonEnergyTotal = CreateTree::Instance()->createBranch<float>("depositedIonEnergyTotal");
   b_depositedElecEnergyTotal = CreateTree::Instance()->createBranch<float>("depositedElecEnergyTotal");
@@ -100,11 +91,13 @@ void SteppingAction::UserSteppingAction(const G4Step *theStep)
   *b_depositedIonEnergyTotal += energyIon / GeV;
   *b_depositedElecEnergyTotal += energyElec / GeV;
 
+  // Record escaped energy
   if (thePostPoint->GetStepStatus() == fWorldBoundary)
   {
     *b_depositedEnergyEscapeWorld += thePostPoint->GetKineticEnergy() / GeV;
   }
 
+  // Only propagate photons specified in the config
   handleOpticalPhoton(theStep,
     [this, theStep](ProcessType process, float /*photWL*/, G4double /*gTime*/) {
       if (!propagateCerenkov && process == ProcessType::Ceren)

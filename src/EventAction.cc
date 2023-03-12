@@ -24,6 +24,7 @@ using namespace CLHEP;
 
 EventAction::EventAction(const G4int &modulo) : printModulo(modulo), fDRHCID(-1)
 {
+  // Event branches
   b_event = CreateTree::Instance()->createBranch<int>("Event");
   b_primaryID = CreateTree::Instance()->createBranch<int>("PrimaryID");
   b_initialPosition = CreateTree::Instance()->createBranch<float, 3>("inputInitialPosition");
@@ -52,6 +53,7 @@ void EventAction::BeginOfEventAction(const G4Event *evt)
   G4PrimaryVertex *vertex = evt->GetPrimaryVertex();
   G4PrimaryParticle *particle = vertex->GetPrimary();
 
+  // Record incident particle kinematics
   *b_event = evt->GetEventID();
   *b_primaryID = particle->GetPDGcode();
   convertThreeVector(*b_initialPosition, vertex->GetPosition() / mm);

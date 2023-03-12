@@ -3,8 +3,9 @@
 
 #include "PerProcessRecord.hh"
 
-class GHCofThisEvent;
-
+/*
+ * SD_Base implements methods that all detectors might find useful.
+ */
 template <typename Impl>
 class SD_Base : public G4VSensitiveDetector
 {
@@ -18,6 +19,9 @@ protected:
 
   // PerProcess create helpers for branch variables. Don't use a templated function
   // because (template class)::(template method) calls get messy. 
+  //
+  // Impl::HistogramName gives a unique name to the histogram
+  // Impl::BranchName gives a unique name to branch variables
 
   PerProcess<TH1F> createHistogram(const std::string& name, const std::string& title,
                                   int nBuckets, double low, double high) {

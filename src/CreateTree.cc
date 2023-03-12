@@ -24,6 +24,7 @@ CreateTree::CreateTree(const TString name)
   //------------- Parameters --------------
   //---------------------------------------
 
+  /*
 
   //integrated per longitudinal layer
   this->GetTree()->Branch("depositedEnergyEcalFront",&this->depositedEnergyEcalFront,"depositedEnergyEcalFront/F");
@@ -45,19 +46,13 @@ CreateTree::CreateTree(const TString name)
   this->GetTree()->Branch("depositedElecEnergyEcalGap", &this->depositedElecEnergyEcalGap, "depositedElecEnergyEcalGap/F");
   this->GetTree()->Branch("depositedElecEnergyEcalDet", &this->depositedElecEnergyEcalDet, "depositedElecEnergyEcalDet/F");
 
+  */
+
   this->Clear();
 }
-// ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
-
-CreateTree::~CreateTree()
-{
-}
-
-// ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
 int CreateTree::Fill()
 {
-//  this->GetTree()->Write(NULL, TObject::kOverwrite );
   return this->GetTree()->Fill();
 }
 
@@ -72,13 +67,8 @@ bool CreateTree::Write(TFile *outfile)
     h->Write();
   }
 
-  //h_photon_2D_produce_Ceren->Write();
-  //h_photon_2D_receive_Ceren->Write();
-
   return true;
 }
-
-// ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
 void CreateTree::Clear()
 {
@@ -99,46 +89,46 @@ void CreateTree::Clear()
     depositedEnergyECAL_f[i] = 0.;
     depositedEnergyECAL_r[i] = 0.;
   }
-*/
-  depositedEnergyECAL_f = 0.;
-  depositedEnergyECAL_r = 0.;
+  */
+  // depositedEnergyECAL_f = 0.;
+  // depositedEnergyECAL_r = 0.;
   //  depositedEnergyHCALAct = 0.;
   //  depositedEnergyHCALPas = 0.;
-  depositedEnergyWorld = 0.;
+  // depositedEnergyWorld = 0.;
   //  depositedEnergyServices = 0.;
-  depositedEnergyEcalGap = 0.;
-  depositedEnergyEcalDet = 0.;
+  // depositedEnergyEcalGap = 0.;
+  // depositedEnergyEcalDet = 0.;
   //  depositedEnergySolenoid = 0.;
 
-  depositedIonEnergyECAL_f=0;
-  depositedIonEnergyECAL_r=0;
+  // depositedIonEnergyECAL_f=0;
+  // depositedIonEnergyECAL_r=0;
   /*
   for (int i = 0; i < 3; i++){
     depositedIonEnergyECAL_f[i] = 0.;
     depositedIonEnergyECAL_r[i] = 0.;
     }
-*/
+  */
   //  depositedIonEnergyHCALAct = 0.;
   //  depositedIonEnergyHCALPas = 0.;
-  depositedIonEnergyWorld = 0.;
+  // depositedIonEnergyWorld = 0.;
   //  depositedIonEnergyServices = 0.;
-  depositedIonEnergyEcalGap = 0.;
-  depositedIonEnergyEcalDet = 0.;
+  // depositedIonEnergyEcalGap = 0.;
+  // depositedIonEnergyEcalDet = 0.;
   //  depositedIonEnergySolenoid = 0.;
 
-  for (int i = 0; i < 3; i++){
-    depositedElecEnergyECAL_f[i] = 0.;
-    depositedElecEnergyECAL_r[i] = 0.;
-  }
+  // for (int i = 0; i < 3; i++){
+  //   depositedElecEnergyECAL_f[i] = 0.;
+  //   depositedElecEnergyECAL_r[i] = 0.;
+  // }
   //  depositedElecEnergyHCALAct = 0.;
   //  depositedElecEnergyHCALPas = 0.;
-  depositedElecEnergyWorld = 0.;
+  // depositedElecEnergyWorld = 0.;
   //  depositedElecEnergyServices = 0.;
-  depositedElecEnergyEcalGap = 0.;
-  depositedElecEnergyEcalDet = 0.;
+  // depositedElecEnergyEcalGap = 0.;
+  // depositedElecEnergyEcalDet = 0.;
   //  depositedElecEnergySolenoid = 0.;
 
-  tot_phot_cer_HCAL = 0.;
+  // tot_phot_cer_HCAL = 0.;
   /*
   for (int iLayer = 0; iLayer < 6; iLayer++)
   {
@@ -185,17 +175,7 @@ TH1F* CreateTree::lookupHistogram(const std::string& name) {
 
 template <>
 float* CreateTree::createBranch(const std::string& name) {
-  auto [iter, success] = TreeFloats.emplace(name, nullptr);
-  
-  if (success) {
-    std::unique_ptr<float>& value = std::get<1>(*iter);
-    value = std::make_unique<float>(0.);
-    this->GetTree()->Branch(name.c_str(), value.get(), (name + "/F").c_str());
-    return value.get();
-  } else {
-    std::cerr << "Float " << name << " already exists in the tree!\n";
-    return nullptr;
-  }
+  return createNumericBranch(name, TreeFloats, "F");
 }
 
 template <>
@@ -205,17 +185,7 @@ float& CreateTree::lookupBranch(const std::string& name) {
 
 template <>
 int* CreateTree::createBranch(const std::string& name) {
-  auto [iter, success] = TreeInts.emplace(name, nullptr);
-  
-  if (success) {
-    std::unique_ptr<int>& value = std::get<1>(*iter);
-    value = std::make_unique<int>(0);
-    this->GetTree()->Branch(name.c_str(), value.get(), (name + "/I").c_str());
-    return value.get();
-  } else {
-    std::cerr << "Int " << name << " already exists in the tree!\n";
-    return nullptr;
-  }
+  return createNumericBranch(name, TreeInts, "I");
 }
 
 template <>
@@ -242,6 +212,8 @@ template <>
 std::vector<float>& CreateTree::lookupBranch<float, 4>(const std::string& name) {
   return *(TreeFloatVectors[name]);
 }
+
+// ------ Helper for converting G4Vectors to std::vectors for the tree
 
 void convertThreeVector(std::vector<float>& a, const G4ThreeVector& v) {
   a[0] = v[0];
