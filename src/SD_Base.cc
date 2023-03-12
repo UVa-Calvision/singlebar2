@@ -10,15 +10,5 @@ std::optional<ProcessType> readProcess(const G4String& processName) {
   }
 }
 
-unsigned int processToInt(ProcessType type) {
-  for (unsigned int i = 0; i < processTypes().size(); i++) {
-    if (type == processTypes()[i]) {
-      return i;
-    }
-  }
-  return -1;
-}
+const std::array<ProcessType, 2> processTypes = {ProcessType::Scin, ProcessType::Ceren};
 
-std::array<ProcessType, 2> processTypes() {
-  return {ProcessType::Ceren, ProcessType::Scin};
-}
