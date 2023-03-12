@@ -5,13 +5,14 @@
 #include <vector>
 #include "TString.h"
 #include <map>
+#include <unordered_map>
+#include <memory>
 
 #include "TH2F.h"
 #include "TH3F.h"
 #include "TFile.h"
 #include "TTree.h"
 #include "TNtuple.h"
-
 
 // to do: clean up unused values!!
 
@@ -142,16 +143,6 @@ public:
   int tot_phot_cer_ECAL_cheren_r_particleID[8];
   int tot_phot_cer_HCAL;
 
-  // counts of photons detected in (F)ront SiPM, rear (C)herenkov SiPM, rear (S)cint SiPM
-  int SDFdetected_f_S;   // used
-  int SDFdetected_f_C;   // used
-
-  int SDCdetected_r_S;   // used
-  int SDCdetected_r_C;   // used
-
-  int SDSdetected_r_S;   // used
-  int SDSdetected_r_C;   // used
-
   /***************** begin to seperate energy into different channels    ******************/
   // float Edep_Tracker_layer[6];
 
@@ -168,31 +159,24 @@ public:
   TH1F *h_phot_time_ECAL_r_produce_Ceren;
   TH1F *h_phot_time_ECAL_r_produce_Scin;
 
-  // time of photons detected
-  TH1F *h_phot_time_SiPMF_Ceren;
-  TH1F *h_phot_time_SiPMF_Scin;
-  TH1F *h_phot_time_SiPMC_Ceren;
-  TH1F *h_phot_time_SiPMC_Scin;
-  TH1F *h_phot_time_SiPMS_Ceren;
-  TH1F *h_phot_time_SiPMS_Scin;
 
-  // photons collected in front sipm
-  TH1F *h_phot_lambda_SiPMF_f_Ceren;
-  TH1F *h_phot_lambda_SiPMF_f_Scin;
+  TH1F* createHistogram(const std::string& name, const std::string& title, int nBuckets, double low, double high);
+  TH1F* lookupHistogram(const std::string& name);
 
-  // photons collected in rear sipms
-  TH1F *h_phot_lambda_SiPMC_r_Ceren;
-  TH1F *h_phot_lambda_SiPMC_r_Scin; 
-  TH1F *h_phot_lambda_SiPMS_r_Ceren;
-  TH1F *h_phot_lambda_SiPMS_r_Scin; 
+  float* createFloat(const std::string& name);
+  float& lookupFloat(const std::string& name);
 
-  //TH2F *h_photon_2D_produce_Ceren;
-  //TH2F *h_photon_2D_receive_Ceren;
+  int* createInt(const std::string& name);
+  int& lookupInt(const std::string& name);
 
+  std::vector<float>* createVector(const std::string& name);
+  std::vector<float>& lookupVector(const std::string& name);
 
-  //TH2F *h_photon_2D_produce_Scin;
-  //TH2F *h_photon_2D_receive_Scin;
-
+private:
+  std::map<std::string, TH1F*> Histograms;
+  std::map<std::string, std::unique_ptr<float>> TreeFloats;
+  std::map<std::string, std::unique_ptr<int>> TreeInts;
+  std::map<std::string, std::unique_ptr<std::vector<float>>> TreeVectorFloat;
 };
 
 #endif

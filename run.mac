@@ -5,7 +5,7 @@
 
 # beam
 /gps/energy 1 GeV
-#/gps/particle mu-
+/gps/particle mu-
 #/gps/particle gamma
 #/gps/particle pi-
 #/gps/particle e-

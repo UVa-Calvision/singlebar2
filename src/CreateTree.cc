@@ -1,5 +1,6 @@
 #include "CreateTree.hh"
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
 
@@ -73,27 +74,6 @@ CreateTree::CreateTree(const TString name)
   this->GetTree()->Branch("ECAL_r_exit_S", &this->ECAL_r_exit_S, "ECAL_r_exit_S/I");
   this->GetTree()->Branch("ECAL_r_exit_C", &this->ECAL_r_exit_C, "ECAL_r_exit_C/I");  
 
-  //detected in three detectors
-  this->GetTree()->Branch("SDFdetected_f_S", &this->SDFdetected_f_S, "SDFdetected_f_S/I");
-  this->GetTree()->Branch("SDFdetected_f_C", &this->SDFdetected_f_C, "SDFdetected_f_C/I");
-  this->GetTree()->Branch("SDCdetected_r_S", &this->SDCdetected_r_S, "SDCdetected_r_S/I");
-  this->GetTree()->Branch("SDCdetected_r_C", &this->SDCdetected_r_C, "SDCdetected_r_C/I");
-  this->GetTree()->Branch("SDSdetected_r_S", &this->SDSdetected_r_S, "SDSdetected_r_S/I");
-  this->GetTree()->Branch("SDSdetected_r_C", &this->SDSdetected_r_C, "SDSdetected_r_C/I");
-
-  //detected photons 
-  h_phot_lambda_SiPMF_f_Scin = new TH1F("h_phot_lambda_SiPMF_f_Scin", "Scint Photon lambda SiPMF;[nm]", 
-					1250, 0., 1250.);
-  h_phot_lambda_SiPMF_f_Ceren = new TH1F("h_phot_lambda_SiPMF_f_Ceren", "Cerenkov Photon lambda SiPMF;[nm]", 
-					 1250, 0., 1250.);
-  h_phot_lambda_SiPMC_r_Scin = new TH1F("h_phot_lambda_SiPMC_r_Scin", "Scint Photon lambda SiPMC;[nm]", 
-					1250, 0., 1250.);
-  h_phot_lambda_SiPMC_r_Ceren = new TH1F("h_phot_lambda_SiPMC_r_Ceren", "Cerenkov Photon lambda SiPMC;[nm]", 
-					 1250, 0., 1250.);
-  h_phot_lambda_SiPMS_r_Scin = new TH1F("h_phot_lambda_SiPMS_r_Scin", "Scint Photon lambda SiPMS;[nm]", 
-					1250, 0., 1250.);
-  h_phot_lambda_SiPMS_r_Ceren = new TH1F("h_phot_lambda_SiPMS_r_Ceren", "Cerenkov Photon lambda SiPMS;[nm]", 
-					 1250, 0., 1250.);
   //generated photons
   h_phot_lambda_ECAL_f_produce_Scin = new TH1F("h_phot_lambda_ECAL_f_produce_Scin", "Scint Photon lambda (front);[nm]", 1250, 0., 1250.);
   h_phot_lambda_ECAL_r_produce_Scin = new TH1F("h_phot_lambda_ECAL_r_produce_Scin", "Scint Photon lambda (rear);[nm]", 1250, 0., 1250.);
@@ -103,14 +83,6 @@ CreateTree::CreateTree(const TString name)
   h_phot_time_ECAL_r_produce_Scin = new TH1F("h_phot_time_ECAL_r_produce_Scin", "Scint Photon time (rear);[ns]", 500, 0., 50.);
   h_phot_time_ECAL_f_produce_Ceren = new TH1F("h_phot_time_ECAL_f_produce_Ceren", "Cerenkov Photon time (front);[ns]", 500, 0., 50.);
   h_phot_time_ECAL_r_produce_Ceren = new TH1F("h_phot_time_ECAL_r_produce_Ceren", "Cerenkov Photon time (rear);[ns]", 500, 0., 50.);
-  // detected photons
-  h_phot_time_SiPMF_Ceren =  new TH1F("h_phot_time_SiPMF_Ceren", "", 500, 0., 50.);
-  h_phot_time_SiPMF_Scin =  new TH1F("h_phot_time_SiPMF_Scin", "", 500, 0., 50.);
-  h_phot_time_SiPMC_Ceren =  new TH1F("h_phot_time_SiPMC_Ceren", "", 500, 0., 50.);
-  h_phot_time_SiPMC_Scin =  new TH1F("h_phot_time_SiPMC_Scin", "", 500, 0., 50.);
-  h_phot_time_SiPMS_Ceren =  new TH1F("h_phot_time_SiPMS_Ceren", "", 500, 0., 50.);
-  h_phot_time_SiPMS_Scin =  new TH1F("h_phot_time_SiPMS_Scin", "", 500, 0., 50.);
-
 
   this->Clear();
 }
@@ -144,19 +116,10 @@ bool CreateTree::Write(TFile *outfile)
   h_phot_time_ECAL_f_produce_Scin->Write();
   h_phot_time_ECAL_r_produce_Ceren->Write();
   h_phot_time_ECAL_r_produce_Scin->Write();
-  h_phot_time_SiPMF_Ceren->Write();
-  h_phot_time_SiPMF_Scin->Write();
-  h_phot_time_SiPMC_Ceren->Write();
-  h_phot_time_SiPMC_Scin->Write();
-  h_phot_time_SiPMS_Ceren->Write();
-  h_phot_time_SiPMS_Scin->Write();
-  h_phot_lambda_SiPMF_f_Ceren->Write();
-  h_phot_lambda_SiPMF_f_Scin->Write();
-  h_phot_lambda_SiPMC_r_Ceren->Write();
-  h_phot_lambda_SiPMC_r_Scin->Write(); 
-  h_phot_lambda_SiPMS_r_Ceren->Write();
-  h_phot_lambda_SiPMS_r_Scin->Write(); 
 
+  for (auto&& [_, h]: Histograms) {
+    h->Write();
+  }
 
 
   //h_photon_2D_produce_Ceren->Write();
@@ -241,14 +204,6 @@ void CreateTree::Clear()
   ECAL_f_exit_S = 0.;
   ECAL_r_exit_C = 0.;
 
-  SDFdetected_f_S = 0.;
-  SDFdetected_f_C = 0.;
-  SDCdetected_r_S = 0.;
-  SDCdetected_r_C = 0.; 
-  SDSdetected_r_S = 0.;
-  SDSdetected_r_C = 0.;
-
-
   tot_phot_cer_HCAL = 0.;
   /*
   for (int iLayer = 0; iLayer < 6; iLayer++)
@@ -280,4 +235,92 @@ void CreateTree::Clear()
     primaryPosE1->at(i) = 0.;
   }
   */
+
+  for (auto&& [_, f] : TreeFloats) {
+    *f = 0.;
+  }
+
+  for (auto&& [_, i] : TreeInts) {
+    *i = 0;
+  }
+
+  for (auto&& [_, v] : TreeVectorFloat) {
+    *v = {0., 0., 0.};
+  }
+}
+
+TH1F* CreateTree::createHistogram(
+  const std::string& name, const std::string& title,
+  int nBuckets, double low, double high) {
+
+  auto [iter, success] = Histograms.emplace(name, nullptr);
+
+  // If the key doesn't exist, then we create the histogram
+  if (success) {
+    TH1F*& value = std::get<1>(*iter);
+    value = new TH1F(name.c_str(), title.c_str(), nBuckets, low, high);
+    return value;
+  } else {
+    // If the key doesn't exist, write an error
+    std::cerr << "Histogram " << name << " already exists!\n";
+    return nullptr;
+  }
+}
+
+TH1F* CreateTree::lookupHistogram(const std::string& name) {
+  return Histograms[name];
+}
+
+float* CreateTree::createFloat(const std::string& name) {
+  auto [iter, success] = TreeFloats.emplace(name, nullptr);
+  
+  if (success) {
+    std::unique_ptr<float>& value = std::get<1>(*iter);
+    value = std::make_unique<float>(0.);
+    this->GetTree()->Branch(name.c_str(), value.get(), (name + "/F").c_str());
+    return value.get();
+  } else {
+    std::cerr << "Float " << name << " already exists in the tree!\n";
+    return nullptr;
+  }
+}
+
+float& CreateTree::lookupFloat(const std::string& name) {
+  return *(TreeFloats[name]);
+}
+
+int* CreateTree::createInt(const std::string& name) {
+  auto [iter, success] = TreeInts.emplace(name, nullptr);
+  
+  if (success) {
+    std::unique_ptr<int>& value = std::get<1>(*iter);
+    value = std::make_unique<int>(0);
+    this->GetTree()->Branch(name.c_str(), value.get(), (name + "/I").c_str());
+    return value.get();
+  } else {
+    std::cerr << "Int " << name << " already exists in the tree!\n";
+    return nullptr;
+  }
+}
+
+int& CreateTree::lookupInt(const std::string& name) {
+  return *(TreeInts[name]);
+}
+
+std::vector<float>* CreateTree::createVector(const std::string& name) {
+   auto [iter, success] = TreeVectorFloat.emplace(name, nullptr);
+  
+  if (success) {
+    std::unique_ptr<std::vector<float>>& value = std::get<1>(*iter);
+    value = std::make_unique<std::vector<float>>(3, 0.);
+    this->GetTree()->Branch(name.c_str(), "vector<float>", value.get());
+    return value.get();
+  } else {
+    std::cerr << "Vector " << name << " already exists in the tree!\n";
+    return nullptr;
+  } 
+}
+
+std::vector<float>& CreateTree::lookupVector(const std::string& name) {
+  return *(TreeVectorFloat[name]);
 }
