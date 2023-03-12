@@ -147,6 +147,7 @@ private:
   G4double sipm_active_x;
   G4double sipm_active_y;
   G4double sipm_gap;
+  G4double sipm_surf_z;
 
 
   G4double hcal_width;
@@ -173,6 +174,7 @@ private:
   G4Material *GaMaterial;
   G4Material *DeMaterial;
   G4Material *WindowMaterial;
+  G4Material *SurfaceMaterial;
   G4Material *PMTGapMaterial;
   //surface
   G4OpticalSurface* fFiberWrapSurface;

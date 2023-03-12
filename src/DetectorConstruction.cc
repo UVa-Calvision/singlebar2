@@ -99,6 +99,60 @@ Misc to do items
 - put a SD in the gap infrom of SIPM to count optical photons making it out of the xtal
 **********************************************************/
 
+namespace {
+
+using Layer_t = std::tuple<G4double, std::vector<G4LogicalVolume*>, std::vector<G4AssemblyVolume*>>;
+
+G4double layeredAssembly(G4AssemblyVolume* assemblyVolume,
+	const std::vector<Layer_t>& layers,
+	G4ThreeVector offset,
+	G4RotationMatrix Ra,
+	bool flip_endcap = false) {
+
+	const G4ThreeVector z{0,0,1};
+
+  G4double totalLength = 0.;
+
+	for (unsigned int i = 0; i < layers.size(); i++) {
+    totalLength += std::get<0>(layers[i]);
+
+		if (i == 0) {
+			offset += 0.5 * std::get<0>(layers[i]) * z;
+		} else {
+			offset += 0.5 * (std::get<0>(layers[i]) + std::get<0>(layers[i-1])) * z;
+		}
+
+		if (i == layers.size() - 1 && flip_endcap) {
+			Ra.rotateX(180. * deg);
+		}
+
+		for (G4LogicalVolume* v : std::get<1>(layers[i])) {
+			assemblyVolume->AddPlacedVolume(v, offset, &Ra);
+		}
+
+		for (G4AssemblyVolume* v : std::get<2>(layers[i])) {
+			assemblyVolume->AddPlacedAssembly(v, offset, &Ra);
+		}
+	}
+
+  return totalLength;
+}
+
+G4double layerPosition(
+  const std::vector<Layer_t>& layers,
+  G4ThreeVector offset) {
+
+  G4double pos = offset.z();
+  for (const auto& layer : layers) {
+    pos += std::get<0>(layer);
+  }
+
+  return pos;
+}
+
+} // namespace ::
+
+
 DetectorConstruction::DetectorConstruction(const string &configFileName)
 {
   //---------------------------------------
@@ -134,7 +188,7 @@ DetectorConstruction::DetectorConstruction(const string &configFileName)
   config.readInto(sipm_window_l,"sipm_window_l");
   config.readInto(sipm_active_x,"sipm_active_x");
   config.readInto(sipm_active_y,"sipm_active_y");
-  config.readInto(sipm_gap,"sipm_gap");
+  config.readInto(sipm_surf_z,"sipm_surf_z");
 
 
   config.readInto(wrap_material, "wrap_material");
@@ -281,10 +335,22 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
 
   G4VSolid *ecalWrapper_shellS_r = new G4SubtractionSolid("ecalWrapper_shellS_r", ecalWrapper_outerS_r, ecalWrapper_innerS_r);  // 6 sided wrapper
 
-  // shift outer wrapper block to cut off front face of wapper to xtal surface
-  G4IntersectionSolid *ecalWrapperS_r = new G4IntersectionSolid("ecalWrapperS_r",ecalWrapper_shellS_r,ecalWrapper_outerS_r,
-								NULL,G4ThreeVector(0,0,-wrapper_gap -wrap_thick));
+  G4IntersectionSolid *ecalWrapperS_r = nullptr;
+  const bool use_sipmR_wrapper = true;    // switch for wrapper to cover no faces or a single face for rear crystal (sipmR needs no faces)
   
+  if (use_sipmR_wrapper) {
+    // shift outer wrapper block to cut off front face of wapper to xtal surface
+    G4IntersectionSolid *ecalWrapperS_r1 = new G4IntersectionSolid("ecalWrapperS_r1",ecalWrapper_shellS_r,ecalWrapper_outerS_r,
+                  NULL,{0,0,-(wrapper_gap + wrap_thick)});
+    // also cut off back face
+    ecalWrapperS_r = new G4IntersectionSolid("ecalWrapperS_r", ecalWrapperS_r1, ecalWrapper_outerS_r,
+                    NULL,{0,0,wrapper_gap + wrap_thick});
+  } else {
+    // shift outer wrapper block to cut off front face of wapper to xtal surface
+    ecalWrapperS_r = new G4IntersectionSolid("ecalWrapperS_r",ecalWrapper_shellS_r,ecalWrapper_outerS_r,
+                  NULL,{0,0,-(wrapper_gap + wrap_thick)});
+  }
+
   G4LogicalVolume *ecalWrapperL_r = new G4LogicalVolume(ecalWrapperS_r, WrapMaterial, "ecalWrapperL_r"); 
   
 
@@ -299,12 +365,17 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   G4LogicalVolume *sipmSWindowL = new G4LogicalVolume(sipmWindowS, WindowMaterial, "sipmSWindowL", 0, 0, 0);
   G4LogicalVolume *sipmCWindowL = new G4LogicalVolume(sipmWindowS, WindowMaterial, "sipmCWindowL", 0, 0, 0);
   G4LogicalVolume *sipmFWindowL = new G4LogicalVolume(sipmWindowS, WindowMaterial, "sipmFWindowL", 0, 0, 0);
+  G4LogicalVolume *sipmRWindowL = new G4LogicalVolume(sipmWindowS, WindowMaterial, "sipmRWindowL", 0, 0, 0);
 
   G4LogicalVolume *sipmBorderL = new G4LogicalVolume(sipmBorderS, WindowMaterial, "sipmBorderL", 0, 0, 0);
   G4LogicalVolume *sipmBaseL = new G4LogicalVolume(sipmBaseS, DeMaterial, "sipmBaseL", 0, 0, 0);
 
+  // SiPM coating
+  G4Box *coatingS = new G4Box("coatingS", 0.5 * sipm_size_x, 0.5 * sipm_size_y, 0.5 * sipm_surf_z);
+  G4LogicalVolume *coatingL = new G4LogicalVolume(coatingS, SurfaceMaterial, "coatingL", 0, 0, 0);
+
   // baffle front
-  G4double baffle_z = wrapper_gap + sipm_size_z;
+  G4double baffle_z = sipm_gap + sipm_size_z + sipm_surf_z;
   G4Box *baffleS_f = new G4Box("baffleS_f", 0.5 * ecal_front_face + wrapper_gap + wrap_thick, 
 					    0.5 * ecal_front_face + wrapper_gap + wrap_thick, 
 			                    0.5 * (sipm_gap + sipm_size_z));
@@ -314,18 +385,21 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   G4Box *matchBoxS =  new G4Box("matchBoxS",0.5 * sipm_size_x, 0.5 * sipm_size_y, 0.5*sipm_gap);
   G4LogicalVolume *matchBoxL = new G4LogicalVolume(matchBoxS, GaMaterial, "matchBoxL");          // matching material between SiPM and Xtal
 
+  auto AssembleSipm = [&] (G4AssemblyVolume* sipmAssembly, G4LogicalVolume* sipmWindowL, G4ThreeVector offset) {
+    layeredAssembly(
+        sipmAssembly,
+        { {-sipm_gap     , {matchBoxL}, {}},
+          {-sipm_surf_z  , {coatingL}, {}},
+          {-sipm_window_l, {sipmWindowL, sipmBorderL}, {}},
+          {-base_l       , {sipmBaseL}, {}} },
+        offset + G4ThreeVector{0, 0, 0.5 * baffle_z},
+        Ra);
+  };
+
   // SiPM assembly for front, including baffle
-  Ta.set(0,0,0);
   G4AssemblyVolume* sipmAssembly_f = new G4AssemblyVolume();
   sipmAssembly_f->AddPlacedVolume(baffleL_f, Ta, &Ra );        // origin of assembly is at center of the baffle
-  Ta.setZ( 0.5*baffle_z - 0.5*sipm_gap); 
-  // build SiPM by layers              
-  sipmAssembly_f->AddPlacedVolume(matchBoxL, Ta, &Ra );       // place the matching/sipm_gap material volume 
-  Ta.setZ( 0.5*baffle_z - 0.5*sipm_window_l - sipm_gap);       
-  sipmAssembly_f->AddPlacedVolume( sipmFWindowL, Ta, &Ra );    // window set back by small gap from xtal/baffle surface
-  sipmAssembly_f->AddPlacedVolume( sipmBorderL, Ta, &Ra );   
-  Ta.setZ( -0.5*baffle_z + 0.5*base_l );                       // measured from back face of baffle
-  sipmAssembly_f->AddPlacedVolume( sipmBaseL, Ta, &Ra );
+  AssembleSipm(sipmAssembly_f, sipmFWindowL, {0,0,0});
 
   // baffle rear 
   G4Box *baffleS_r = new G4Box("baffleS_r", 0.5 * ecal_rear_face + wrapper_gap + wrap_thick, 
@@ -341,53 +415,55 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   Ta.set(0,0,0);
   G4AssemblyVolume* sipmAssembly_r = new G4AssemblyVolume();
   sipmAssembly_r->AddPlacedVolume(baffleL_r, Ta, &Ra );       // origin of assembly is at center of the baffle
+  AssembleSipm(sipmAssembly_r, sipmSWindowL, {0, ecal_rear_face/4.0, 0});
+  AssembleSipm(sipmAssembly_r, sipmCWindowL, {0, -ecal_rear_face/4.0, 0});
 
-  // SiPM back S-type
-  Ta.set(0, ecal_rear_face/4.0, 0.5*baffle_z - 0.5*sipm_gap);
-  sipmAssembly_r->AddPlacedVolume(matchBoxL, Ta, &Ra ); 
-  Ta.set(0, ecal_rear_face/4.0, 0.5*baffle_z - 0.5*sipm_window_l - sipm_gap); 
-  sipmAssembly_r->AddPlacedVolume( sipmSWindowL, Ta, &Ra );
-  sipmAssembly_r->AddPlacedVolume( sipmBorderL, Ta, &Ra );
-  Ta.set(0, ecal_rear_face/4.0, -0.5*baffle_z + 0.5*base_l );                      // measured from back face of baffle
-  sipmAssembly_r->AddPlacedVolume( sipmBaseL, Ta, &Ra );
-
-  // SiPM back C-type
-  Ta.set(0, -ecal_rear_face/4.0, 0.5*baffle_z - 0.5*sipm_gap); 
-  sipmAssembly_r->AddPlacedVolume(matchBoxL, Ta, &Ra ); 
-  Ta.set(0, -ecal_rear_face/4.0, 0.5*baffle_z - 0.5*sipm_window_l - sipm_gap); 
-  sipmAssembly_r->AddPlacedVolume( sipmCWindowL, Ta, &Ra );
-  sipmAssembly_r->AddPlacedVolume( sipmBorderL, Ta, &Ra );
-  Ta.set(0, -ecal_rear_face/4.0, -0.5*baffle_z + 0.5*base_l );                      // measured from back face of baffle
-  sipmAssembly_r->AddPlacedVolume( sipmBaseL, Ta, &Ra );
-
+  // SiPM R assembly - copy the construction of front SiPM
+  G4LogicalVolume *baffleL_R = new G4LogicalVolume(baffle_cutoutS_f, WrapMaterial, "baffelL_R");
+  G4AssemblyVolume* sipmAssembly_R = new G4AssemblyVolume();
+  sipmAssembly_R->AddPlacedVolume(baffleL_R, Ta, &Ra);
+  AssembleSipm(sipmAssembly_R, sipmRWindowL, {0, 0, 0});
 
 
   /////// module assembly ///////
 
   // crystal + wrapper assemblies
-  Ta.set(0,0,0);
   G4AssemblyVolume* xtalAssembly = new G4AssemblyVolume();
-  Ta.setZ(ecal_front_length * 0.5);                          // align face of front Xtal at z=0
-  if (!one_layer_ecal){
-    xtalAssembly->AddPlacedVolume( ecalCrystalL_f, Ta, &Ra );  // origin is at center of front xtal face
-    xtalAssembly->AddPlacedVolume( ecalWrapperL_f, Ta, &Ra );
-  }
 
-  G4double rear_xtal_offset=ecal_front_length + wrapper_gap*2 + wrap_thick*2 + ecal_z_gap + 0.5 * ecal_rear_length;
-  G4cout << "Front face of rear crystal placement at z = " << rear_xtal_offset-0.5 * ecal_rear_length + z0 << " mm" << G4endl;
-  Ta.setZ(rear_xtal_offset);   // rear xtal, placement relative face of front xtal
-  xtalAssembly->AddPlacedVolume( ecalCrystalL_r, Ta, &Ra );
-  xtalAssembly->AddPlacedVolume( ecalWrapperL_r, Ta, &Ra ); 
+  // Both xtal with SiPM R
+  std::vector<Layer_t> sipmRLayers = {
+    { baffle_z,                               {}, {sipmAssembly_f} },
+    { ecal_front_length,                      {ecalCrystalL_f, ecalWrapperL_f}, {} },
+    { wrapper_gap + wrap_thick + ecal_z_gap,  {}, {} },
+    { baffle_z,                               {}, {sipmAssembly_R} },
+    { ecal_rear_length,                       {ecalCrystalL_r, ecalWrapperL_r}, {} },
+    { baffle_z,                               {}, {sipmAssembly_r} }
+  };
 
-  // add front sipm assembly
-  if (!one_layer_ecal){
-    Ta.set(0,0,-0.5*baffle_z);
-    xtalAssembly->AddPlacedAssembly(sipmAssembly_f, Ta, &Ra);
-  }
-  // add rear sipm assembly
-  Ra.rotateX(180.*deg);
-  Ta.set(0,0,ecal_front_length + wrapper_gap*2 + wrap_thick*2 + ecal_z_gap + ecal_rear_length + 0.5*baffle_z);
-  xtalAssembly->AddPlacedAssembly(sipmAssembly_r, Ta, &Ra);
+  // Only rear xtal with rear SiPMs
+  std::vector<Layer_t> singleCrystalLayers = {
+    { baffle_z,                                      {}, {} },
+    { ecal_front_length,                             {}, {} },
+    { 2.0 * (wrapper_gap + wrap_thick) + ecal_z_gap, {}, {} },
+    { ecal_rear_length,                              {ecalCrystalL_r, ecalWrapperL_r}, {} },
+    { baffle_z,                                      {}, {sipmAssembly_r} }
+  };
+
+  // Front and rear xtal with front and rear SiPMs
+  std::vector<Layer_t> doubleCrystalLayers = {
+    { baffle_z,                                      {}, {sipmAssembly_f} },
+    { ecal_front_length,                             {ecalCrystalL_f, ecalWrapperL_f}, {} },
+    { 2.0 * (wrapper_gap + wrap_thick) + ecal_z_gap, {}, {} },
+    { ecal_rear_length,                              {ecalCrystalL_r, ecalWrapperL_r}, {} },
+    { baffle_z,                                      {}, {sipmAssembly_r} }
+  };
+
+  const G4ThreeVector assemblyOffset{0 , 0, -baffle_z};
+
+  // Currently layer choice is hard coded. Need to also comment / uncomment appropriate ecalWrapper_f code.
+  layeredAssembly(xtalAssembly, sipmRLayers, assemblyOffset, Ra, true);
+
+  G4cout << "Front face of rear crystal placement at z = " << (layerPosition(sipmRLayers, assemblyOffset) / mm) << " mm" << G4endl;
   
   // set surface properties
   G4LogicalSkinSurface *crystalSurface_f = new G4LogicalSkinSurface("crystalSurface_f", ecalCrystalL_f, fECALSurface);
@@ -405,7 +481,6 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
 
   // module placement in caloLV
   Ta.set(0,0,0);
-  Ra.rotateX(-180.*deg);  // undo rotation
   xtalAssembly->MakeImprint(caloLV, Ta, &Ra, 0, checkOverlaps);
 
   if (narray>1) {
@@ -679,6 +754,7 @@ void DetectorConstruction::initializeMaterials()
   WindowMaterial = MyMaterials::SiO2();     // to do: allow setting
   PMTGapMaterial = MyMaterials::silicone();
   DeMaterial = MyMaterials::Ceramic();
+  SurfaceMaterial = MyMaterials::SiO2();
 
   GaMaterial = NULL;
   if (gap_material == 1)
@@ -885,6 +961,6 @@ void DetectorConstruction::initializeSurface()
   return;
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
 
 //---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
