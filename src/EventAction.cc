@@ -20,13 +20,15 @@
 #include <assert.h>
 #include <vector>
 
-using std::array;
 using namespace CLHEP;
 
-
-//} // namespace
 EventAction::EventAction(const G4int &modulo) : printModulo(modulo), fDRHCID(-1)
 {
+  b_event = CreateTree::Instance()->createBranch<int>("Event");
+  b_primaryID = CreateTree::Instance()->createBranch<int>("PrimaryID");
+  b_initialPosition = CreateTree::Instance()->createBranch<float, 3>("inputInitialPosition");
+  b_initialMomentum = CreateTree::Instance()->createBranch<float, 4>("inputMomentum");
+  b_polarization = CreateTree::Instance()->createBranch<float, 3>("polarization");
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
@@ -48,42 +50,19 @@ void EventAction::BeginOfEventAction(const G4Event *evt)
   CreateTree::Instance()->Clear();
 
   G4PrimaryVertex *vertex = evt->GetPrimaryVertex();
-  G4double x = vertex->GetX0();
-  G4double y = vertex->GetY0();
-  G4double z = vertex->GetZ0();
-
   G4PrimaryParticle *particle = vertex->GetPrimary();
-  G4int pdgID = particle->GetPDGcode();
-  G4double InitEnergy = particle->GetTotalEnergy();
-  G4double px = particle->GetPx();
-  G4double py = particle->GetPy();
-  G4double pz = particle->GetPz();
-  
-  G4double polx = particle->GetPolX ();
-  G4double poly = particle->GetPolY ();
-  G4double polz = particle->GetPolZ ();
 
-
-  CreateTree::Instance()->Event = evt->GetEventID();
-  CreateTree::Instance()->primaryID = pdgID;
-  CreateTree::Instance()->inputInitialPosition->at(0) = x / mm;
-  CreateTree::Instance()->inputInitialPosition->at(1) = y / mm;
-  CreateTree::Instance()->inputInitialPosition->at(2) = z / mm;
-  CreateTree::Instance()->inputMomentum->at(0) = px / GeV;
-  CreateTree::Instance()->inputMomentum->at(1) = py / GeV;
-  CreateTree::Instance()->inputMomentum->at(2) = pz / GeV;
-  CreateTree::Instance()->inputMomentum->at(3) = InitEnergy / GeV;
-  CreateTree::Instance()->polarization->at(0) = polx;
-  CreateTree::Instance()->polarization->at(1) = poly;
-  CreateTree::Instance()->polarization->at(2) = polz;
+  *b_event = evt->GetEventID();
+  *b_primaryID = particle->GetPDGcode();
+  convertThreeVector(*b_initialPosition, vertex->GetPosition() / mm);
+  convertFourVector(*b_initialMomentum, particle->GetMomentum() / GeV, particle->GetTotalEnergy() / GeV);
+  convertThreeVector(*b_polarization, particle->GetPolarization());
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
 void EventAction::EndOfEventAction(const G4Event *evt)
 {
-  CreateTree::Instance()->Event = evt->GetEventID();
-
 //  G4String DRHCName = "DR_Det/PMTHitsCollection";
 //  fDRHCID = sdManager->GetCollectionID(DRHCName);
 //  std::cout<<"------------------------------GetCollectionID "<<fDRHCID<<std::endl;

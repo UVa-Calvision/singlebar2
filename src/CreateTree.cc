@@ -1,6 +1,7 @@
 #include "CreateTree.hh"
 #include <algorithm>
 #include <iostream>
+#include <type_traits>
 
 using namespace std;
 
@@ -24,36 +25,20 @@ CreateTree::CreateTree(const TString name)
   //---------------------------------------
 
 
-  this->GetTree()->Branch("Event", &this->Event, "Event/I");
-
-  inputInitialPosition = new vector<float>(3, 0.);
-  inputMomentum = new vector<float>(4, 0.);
-  polarization = new vector<float>(3, 0.);
-
-  this->GetTree()->Branch("inputInitialPosition", "vector<float>", &inputInitialPosition);
-  this->GetTree()->Branch("inputMomentum", "vector<float>", &inputMomentum);
-  this->GetTree()->Branch("polarization", "vector<float>", &polarization);
-  this->GetTree()->Branch("primaryID", &this->primaryID, "primaryID/I");
-
-
   //integrated per longitudinal layer
   this->GetTree()->Branch("depositedEnergyEcalFront",&this->depositedEnergyEcalFront,"depositedEnergyEcalFront/F");
 
 
-  this->GetTree()->Branch("depositedEnergyTotal", &this->depositedEnergyTotal, "depositedEnergyTotal/F");
-  this->GetTree()->Branch("depositedEnergyEscapeWorld", &this->depositedEnergyEscapeWorld, "depositedEnergyEscapeWorld/F");
   this->GetTree()->Branch("depositedEnergyECAL_f", &this->depositedEnergyECAL_f, "depositedEnergyECAL_f/F");
   this->GetTree()->Branch("depositedEnergyECAL_r", &this->depositedEnergyECAL_r, "depositedEnergyECAL_r/F");
   this->GetTree()->Branch("depositedEnergyWorld", &this->depositedEnergyWorld, "depositedEnergyWorld/F");
   this->GetTree()->Branch("depositedEnergyEcalGap", &this->depositedEnergyEcalGap, "depositedEnergyEcalGap/F");
   this->GetTree()->Branch("depositedEnergyEcalDet", &this->depositedEnergyEcalDet, "depositedEnergyEcalDet/F");
-  this->GetTree()->Branch("depositedIonEnergyTotal", &this->depositedIonEnergyTotal, "depositedIonEnergyTotal/F");
   this->GetTree()->Branch("depositedIonEnergyECAL_f", &this->depositedIonEnergyECAL_f, "depositedIonEnergyECAL_f/F");
   this->GetTree()->Branch("depositedIonEnergyECAL_r", &this->depositedIonEnergyECAL_r, "depositedIonEnergyECAL_r/F");
   this->GetTree()->Branch("depositedIonEnergyWorld", &this->depositedIonEnergyWorld, "depositedIonEnergyWorld/F");
   this->GetTree()->Branch("depositedIonEnergyEcalGap", &this->depositedIonEnergyEcalGap, "depositedIonEnergyEcalGap/F");
   this->GetTree()->Branch("depositedIonEnergyEcalDet", &this->depositedIonEnergyEcalDet, "depositedIonEnergyEcalDet/F");
-  this->GetTree()->Branch("depositedElecEnergyTotal", &this->depositedElecEnergyTotal, "depositedElecEnergyTotal/F");
   this->GetTree()->Branch("depositedElecEnergyECAL_f", &this->depositedElecEnergyECAL_f, "depositedElecEnergyECAL_f[3]/F");
   this->GetTree()->Branch("depositedElecEnergyECAL_r", &this->depositedElecEnergyECAL_r, "depositedElecEnergyECAL_r[3]/F");
   this->GetTree()->Branch("depositedElecEnergyWorld", &this->depositedElecEnergyWorld, "depositedElecEnergyWorld/F");
@@ -97,8 +82,6 @@ bool CreateTree::Write(TFile *outfile)
 
 void CreateTree::Clear()
 {
-  Event = 0;
-
   /*
   nTracksT1 = 0;
   nTracksT2 = 0;
@@ -111,9 +94,6 @@ void CreateTree::Clear()
   }
   */
 
-  depositedEnergyEscapeWorld = 0.;
-
-  depositedEnergyTotal = 0.;
   /*
   for (int i = 0; i < 3; i++){
     depositedEnergyECAL_f[i] = 0.;
@@ -130,7 +110,6 @@ void CreateTree::Clear()
   depositedEnergyEcalDet = 0.;
   //  depositedEnergySolenoid = 0.;
 
-  depositedIonEnergyTotal = 0.;
   depositedIonEnergyECAL_f=0;
   depositedIonEnergyECAL_r=0;
   /*
@@ -147,7 +126,6 @@ void CreateTree::Clear()
   depositedIonEnergyEcalDet = 0.;
   //  depositedIonEnergySolenoid = 0.;
 
-  depositedElecEnergyTotal = 0.;
   for (int i = 0; i < 3; i++){
     depositedElecEnergyECAL_f[i] = 0.;
     depositedElecEnergyECAL_r[i] = 0.;
@@ -168,30 +146,6 @@ void CreateTree::Clear()
   }
   */
   
-  for (int i = 0; i < 3; ++i)
-  {
-    inputInitialPosition->at(i) = 0.;
-    //primaryPosT1->at(i) = 0.;
-    //primaryPosE1->at(i) = 0.;
-  }
-  
-  
-  for (int i = 0; i < 4; ++i)
-  {
-    inputMomentum->at(i) = 0.;
-    //primaryMomT1->at(i) = 0.;
-    //primaryMomE1->at(i) = 0.;
-  }
-  primaryID=0;
-  /*
-  for (int i = 0; i < 3; ++i)
-  {
-    inputInitialPosition->at(i) = 0.;
-    primaryPosT1->at(i) = 0.;
-    primaryPosE1->at(i) = 0.;
-  }
-  */
-
   for (auto&& [_, f] : TreeFloats) {
     *f = 0.;
   }
@@ -200,8 +154,10 @@ void CreateTree::Clear()
     *i = 0;
   }
 
-  for (auto&& [_, v] : TreeVectorFloat) {
-    *v = {0., 0., 0.};
+  for (auto&& [_, v] : TreeFloatVectors) {
+    for (auto& x : *v) {
+      x = 0.;
+    }
   }
 }
 
@@ -227,7 +183,8 @@ TH1F* CreateTree::lookupHistogram(const std::string& name) {
   return Histograms[name];
 }
 
-float* CreateTree::createFloat(const std::string& name) {
+template <>
+float* CreateTree::createBranch(const std::string& name) {
   auto [iter, success] = TreeFloats.emplace(name, nullptr);
   
   if (success) {
@@ -241,11 +198,13 @@ float* CreateTree::createFloat(const std::string& name) {
   }
 }
 
-float& CreateTree::lookupFloat(const std::string& name) {
+template <>
+float& CreateTree::lookupBranch(const std::string& name) {
   return *(TreeFloats[name]);
 }
 
-int* CreateTree::createInt(const std::string& name) {
+template <>
+int* CreateTree::createBranch(const std::string& name) {
   auto [iter, success] = TreeInts.emplace(name, nullptr);
   
   if (success) {
@@ -259,24 +218,40 @@ int* CreateTree::createInt(const std::string& name) {
   }
 }
 
-int& CreateTree::lookupInt(const std::string& name) {
+template <>
+int& CreateTree::lookupBranch(const std::string& name) {
   return *(TreeInts[name]);
 }
 
-std::vector<float>* CreateTree::createVector(const std::string& name) {
-   auto [iter, success] = TreeVectorFloat.emplace(name, nullptr);
-  
-  if (success) {
-    std::unique_ptr<std::vector<float>>& value = std::get<1>(*iter);
-    value = std::make_unique<std::vector<float>>(3, 0.);
-    this->GetTree()->Branch(name.c_str(), "vector<float>", value.get());
-    return value.get();
-  } else {
-    std::cerr << "Vector " << name << " already exists in the tree!\n";
-    return nullptr;
-  } 
+template <>
+std::vector<float>* CreateTree::createBranch<float, 3>(const std::string& name) {
+  return createVectorBranch<float, 3>(name, TreeFloatVectors, "vector<float>");
 }
 
-std::vector<float>& CreateTree::lookupVector(const std::string& name) {
-  return *(TreeVectorFloat[name]);
+template <>
+std::vector<float>& CreateTree::lookupBranch<float, 3>(const std::string& name) {
+  return *(TreeFloatVectors[name]);
+}
+
+template <>
+std::vector<float>* CreateTree::createBranch<float, 4>(const std::string& name) {
+  return createVectorBranch<float, 4>(name, TreeFloatVectors, "vector<float>");
+}
+
+template <>
+std::vector<float>& CreateTree::lookupBranch<float, 4>(const std::string& name) {
+  return *(TreeFloatVectors[name]);
+}
+
+void convertThreeVector(std::vector<float>& a, const G4ThreeVector& v) {
+  a[0] = v[0];
+  a[1] = v[1];
+  a[2] = v[2];
+}
+
+void convertFourVector(std::vector<float>& a, const G4ThreeVector& v, G4double t) {
+  a[0] = v[0];
+  a[1] = v[1];
+  a[2] = v[2];
+  a[3] = t;
 }

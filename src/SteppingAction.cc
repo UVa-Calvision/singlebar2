@@ -8,6 +8,7 @@
 #include "G4Step.hh"
 #include "G4Track.hh"
 #include "G4SteppingManager.hh"
+#include "PerProcessRecord.hh"
 #include <time.h>
 
 #include "G4EventManager.hh"
@@ -64,6 +65,11 @@ SteppingAction::SteppingAction(DetectorConstruction *detectorConstruction,
                                                                         propagateCerenkov(cher)
 {
   maxtracklength = 500000. * mm;
+
+  b_depositedEnergyTotal = CreateTree::Instance()->createBranch<float>("depositedEnergyTotal");
+  b_depositedIonEnergyTotal = CreateTree::Instance()->createBranch<float>("depositedIonEnergyTotal");
+  b_depositedElecEnergyTotal = CreateTree::Instance()->createBranch<float>("depositedElecEnergyTotal");
+  b_depositedEnergyEscapeWorld = CreateTree::Instance()->createBranch<float>("depositedEnergyEscapeWorld");
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
@@ -76,75 +82,37 @@ SteppingAction::~SteppingAction()
 
 void SteppingAction::UserSteppingAction(const G4Step *theStep)
 {
-  //G4cout << "UserSteppingAction::ProcessHits" << G4endl;
-
   // this code does very little now 
   // it is being replaced with sensitive detector code
   // clean me up!  is it useful to have this to cut on photon lambda?
   // or not? then delete all code here
   G4Track *theTrack = theStep->GetTrack();
-
-  G4ParticleDefinition *particleType = theTrack->GetDefinition();
-
-  G4StepPoint *thePrePoint = theStep->GetPreStepPoint();
   G4StepPoint *thePostPoint = theStep->GetPostStepPoint();
-  const G4ThreeVector &thePrePosition = thePrePoint->GetPosition();
-  G4VPhysicalVolume *thePrePV = thePrePoint->GetPhysicalVolume();
-  G4VPhysicalVolume *thePostPV = thePostPoint->GetPhysicalVolume();
-  G4String thePrePVName = "";
-  if (thePrePV)
-    thePrePVName = thePrePV->GetName();
-  G4String thePostPVName = "";
-  if (thePostPV)
-    thePostPVName = thePostPV->GetName();
-
-  G4int nStep = theTrack->GetCurrentStepNumber();
-  G4int TrPDGid = theTrack->GetDefinition()->GetPDGEncoding();
-
-  //        cout << " step length = " << theStep->GetStepLength() << endl;
-  //-------------
-
-  // get position
-  G4double global_x = thePrePosition.x() / mm;
-  G4double global_y = thePrePosition.y() / mm;
-  G4double global_z = thePrePosition.z() / mm;
 
   G4double energy = theStep->GetTotalEnergyDeposit();
   G4double energyIon = energy - theStep->GetNonIonizingEnergyDeposit();
   G4double energyElec = 0;
-  if (abs(TrPDGid) == 11) energyElec = energyIon;
+  if (abs(theTrack->GetDefinition()->GetPDGEncoding()) == 11) energyElec = energyIon;
 
   // global energy deposits should be very similar to sum of xtal deposits
   // in singlebar/module case
-  CreateTree::Instance()->depositedEnergyTotal += energy / GeV;
-  CreateTree::Instance()->depositedIonEnergyTotal += energyIon / GeV;
-  CreateTree::Instance()->depositedElecEnergyTotal += energyElec / GeV;
+  *b_depositedEnergyTotal += energy / GeV;
+  *b_depositedIonEnergyTotal += energyIon / GeV;
+  *b_depositedElecEnergyTotal += energyElec / GeV;
 
-  bool outworld = ((theStep->GetPostStepPoint())->GetStepStatus()) == fWorldBoundary;
-  if (outworld)
+  if (thePostPoint->GetStepStatus() == fWorldBoundary)
   {
-    CreateTree::Instance()->depositedEnergyEscapeWorld += (theStep->GetPostStepPoint())->GetKineticEnergy() / GeV;
-  }
-  ///
-  if (particleType != G4OpticalPhoton::OpticalPhotonDefinition()) return;
-  //if optics
-  G4String processName="Scintillation";  // protect aginst optical photon gun option w/ no CreatorProcess
-  if (theTrack->GetCreatorProcess()) processName = theTrack->GetCreatorProcess()->GetProcessName();
-
-  float photWL = MyMaterials::fromEvToNm(theTrack->GetTotalEnergy() / eV);
-  if (photWL > 1000 || photWL < 300) {
-    theTrack->SetTrackStatus(fKillTrackAndSecondaries);
-    //G4cout << "Photon killed in user stepping action" << G4endl;
-    return;
+    *b_depositedEnergyEscapeWorld += thePostPoint->GetKineticEnergy() / GeV;
   }
 
-  if (!propagateCerenkov && (processName == "Cerenkov"))
-    theTrack->SetTrackStatus(fKillTrackAndSecondaries);
-  
-  if (!propagateScintillation && (processName == "Scintillation"))
-    theTrack->SetTrackStatus(fKillTrackAndSecondaries);
+  handleOpticalPhoton(theStep,
+    [this, theStep](ProcessType process, float /*photWL*/, G4double /*gTime*/) {
+      if (!propagateCerenkov && process == ProcessType::Ceren)
+        theStep->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
 
+      if (!propagateScintillation && process == ProcessType::Scin)
+        theStep->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
+    });
 
   return;
-
 }

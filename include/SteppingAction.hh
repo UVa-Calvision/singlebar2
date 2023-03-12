@@ -62,6 +62,11 @@ private:
   G4int propagateScintillation;
   G4int propagateCerenkov;
   G4double maxtracklength;
+
+  float* b_depositedEnergyTotal;
+  float* b_depositedIonEnergyTotal;
+  float* b_depositedElecEnergyTotal;
+  float* b_depositedEnergyEscapeWorld;
 };
 
 #endif

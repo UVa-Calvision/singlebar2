@@ -7,6 +7,7 @@
 #include "G4UserEventAction.hh"
 #include "globals.hh"
 #include <vector>
+#include "CreateTree.hh"
 
 const G4int kDim = 2;
 
@@ -24,6 +25,12 @@ public:
   int GetNPhotons(const G4Event*) ;
  
 private:
+  int* b_event;
+  int* b_primaryID;
+  std::vector<float>* b_initialPosition;
+  std::vector<float>* b_initialMomentum;
+  std::vector<float>* b_polarization;
+
   G4int printModulo;
 //  G4int fDRHCID_f;
   G4int fDRHCID;

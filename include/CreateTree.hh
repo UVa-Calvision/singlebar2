@@ -14,6 +14,8 @@
 #include "TTree.h"
 #include "TNtuple.h"
 
+#include "G4ThreeVector.hh"
+
 // to do: clean up unused values!!
 
 class CreateTree
@@ -38,14 +40,6 @@ public:
   static CreateTree *Instance() { return fInstance; };
   static CreateTree *fInstance;
 
-  int Event;
-
-
-  std::vector<float> *inputMomentum;        // Px Py Pz E
-  std::vector<float> *inputInitialPosition; // x, y, z
-  std::vector<float> *polarization;         // x, y, z
-  int primaryID;  /// pdg ID of initila beam particle
-
   /*
   std::vector<float> *primaryMomT1; // Px Py Pz E
   std::vector<float> *primaryPosT1; // x, y, z
@@ -62,9 +56,6 @@ public:
   */
 
   //integrated energy in each longitudinal layer
-  float depositedEnergyEscapeWorld;
-
-  float depositedEnergyTotal;
                                    // using only [0] for now to store all f/r energy
   //float depositedEnergyECAL_f[64];  // upgrade to store up to 8x8 module info
   //float depositedEnergyECAL_r[64];  // to do: implement element testing to do this
@@ -81,7 +72,6 @@ public:
 
   float depositedEnergyEcalFront;
 
-  float depositedIonEnergyTotal;
   //float depositedIonEnergyECAL_f[3];  // also modify to support 8x8
   //float depositedIonEnergyECAL_r[3];
   float depositedIonEnergyECAL_f;
@@ -94,7 +84,6 @@ public:
   //  float depositedIonEnergySolenoid;
   float depositedIonEnergyWorld;
 
-  float depositedElecEnergyTotal;
   float depositedElecEnergyECAL_f[3];
   float depositedElecEnergyECAL_r[3];
   //  float depositedElecEnergyHCALAct;
@@ -137,20 +126,48 @@ public:
   TH1F* createHistogram(const std::string& name, const std::string& title, int nBuckets, double low, double high);
   TH1F* lookupHistogram(const std::string& name);
 
-  float* createFloat(const std::string& name);
-  float& lookupFloat(const std::string& name);
+  template <typename T> T* createBranch(const std::string& name) = delete;
+  template <typename T, unsigned int N> std::vector<float>* createBranch(const std::string& name) = delete;
 
-  int* createInt(const std::string& name);
-  int& lookupInt(const std::string& name);
+  template <typename T> T& lookupBranch(const std::string& name) = delete;
+  template <typename T, unsigned int N> std::vector<float>& lookupBranch(const std::string& name) = delete;
 
-  std::vector<float>* createVector(const std::string& name);
-  std::vector<float>& lookupVector(const std::string& name);
 
 private:
   std::map<std::string, TH1F*> Histograms;
   std::map<std::string, std::unique_ptr<float>> TreeFloats;
   std::map<std::string, std::unique_ptr<int>> TreeInts;
-  std::map<std::string, std::unique_ptr<std::vector<float>>> TreeVectorFloat;
+  std::map<std::string, std::unique_ptr<std::vector<float>>> TreeFloatVectors;
+
+  template <typename T, unsigned int N>
+  std::vector<T>* createVectorBranch(const std::string& name,
+      std::map<std::string, std::unique_ptr<std::vector<T>>>& ptrTree,
+      const std::string& typeName) {
+
+    auto [iter, success] = ptrTree.emplace(name, nullptr);
+    if (success) {
+      std::unique_ptr<std::vector<T>>& value = std::get<1>(*iter);
+      value = std::make_unique<std::vector<T>>(N, T{});
+      this->GetTree()->Branch(name.c_str(), typeName.c_str(), value.get());
+      return value.get();
+    } else {
+      std::cerr << typeName << " " << name << " already exists in the tree!\n";
+      return nullptr;
+    }
+  }
 };
+
+template <> int* CreateTree::createBranch(const std::string&);
+template <> float* CreateTree::createBranch(const std::string&);
+template <> std::vector<float>* CreateTree::createBranch<float, 3>(const std::string&);
+template <> std::vector<float>* CreateTree::createBranch<float, 4>(const std::string&);
+
+template <> int& CreateTree::lookupBranch(const std::string&);
+template <> float& CreateTree::lookupBranch(const std::string&);
+template <> std::vector<float>& CreateTree::lookupBranch<float, 3>(const std::string&);
+template <> std::vector<float>& CreateTree::lookupBranch<float, 4>(const std::string&);
+
+void convertThreeVector(std::vector<float>& a, const G4ThreeVector& v);
+void convertFourVector(std::vector<float>& a, const G4ThreeVector& v, G4double t);
 
 #endif

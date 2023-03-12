@@ -29,7 +29,7 @@ public:
     CreateTree::Instance()->depositedEnergyECAL_f += energy / GeV;
     CreateTree::Instance()->depositedIonEnergyECAL_f += energyIon / GeV;
 
-    BaseType::handleOpticalPhoton(theStep,
+    handleOpticalPhoton(theStep,
       [this, theStep] (ProcessType process, float photWL, G4double gTime) {
         G4Track* track = theStep->GetTrack();
 
@@ -68,13 +68,11 @@ public:
   void PrintAll() override {}
 
   static std::string HistogramName(const std::string& name, ProcessType type) {
-    const std::string processName = type == ProcessType::Ceren ? "Ceren" : "Scin";
-    return "h_" + name + "_" + Impl::ID + "_" + processName;
+    return "h_" + name + "_" + Impl::ID + "_" + processNameShort(type);
   }
 
   static std::string BranchName(const std::string& name, ProcessType type) {
-    const std::string processName = type == ProcessType::Ceren ? "C" : "S";
-    return Impl::ID + "_" + name + "_" + processName;
+    return Impl::ID + "_" + name + "_" + processNameInitial(type);
   }
 
 private:
