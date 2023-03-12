@@ -60,30 +60,6 @@ CreateTree::CreateTree(const TString name)
   this->GetTree()->Branch("depositedElecEnergyEcalGap", &this->depositedElecEnergyEcalGap, "depositedElecEnergyEcalGap/F");
   this->GetTree()->Branch("depositedElecEnergyEcalDet", &this->depositedElecEnergyEcalDet, "depositedElecEnergyEcalDet/F");
 
-
-  //S and C light in crystal bars
-  //total generated in front and rear part
-  this->GetTree()->Branch("ECAL_f_total_S", &this->ECAL_f_total_S, "ECAL_f_total_S/I");
-  this->GetTree()->Branch("ECAL_f_total_C", &this->ECAL_f_total_C, "ECAL_f_total_C/I");
-  this->GetTree()->Branch("ECAL_r_total_S", &this->ECAL_r_total_S, "ECAL_r_total_S/I");
-  this->GetTree()->Branch("ECAL_r_total_C", &this->ECAL_r_total_C, "ECAL_r_total_C/I");  
-
-  //total exiting in front and rear part
-  this->GetTree()->Branch("ECAL_f_exit_S", &this->ECAL_f_exit_S, "ECAL_f_exit_S/I");
-  this->GetTree()->Branch("ECAL_f_exit_C", &this->ECAL_f_exit_C, "ECAL_f_exit_C/I");
-  this->GetTree()->Branch("ECAL_r_exit_S", &this->ECAL_r_exit_S, "ECAL_r_exit_S/I");
-  this->GetTree()->Branch("ECAL_r_exit_C", &this->ECAL_r_exit_C, "ECAL_r_exit_C/I");  
-
-  //generated photons
-  h_phot_lambda_ECAL_f_produce_Scin = new TH1F("h_phot_lambda_ECAL_f_produce_Scin", "Scint Photon lambda (front);[nm]", 1250, 0., 1250.);
-  h_phot_lambda_ECAL_r_produce_Scin = new TH1F("h_phot_lambda_ECAL_r_produce_Scin", "Scint Photon lambda (rear);[nm]", 1250, 0., 1250.);
-  h_phot_lambda_ECAL_f_produce_Ceren = new TH1F("h_phot_lambda_ECAL_f_produce_Ceren", "Cerenkov Photon lambda (front);[nm]", 1250, 0., 1250.);
-  h_phot_lambda_ECAL_r_produce_Ceren = new TH1F("h_phot_lambda_ECAL_r_produce_Ceren", "Cerenkov Photon lambda (rear);[nm]", 1250, 0., 1250.);
-  h_phot_time_ECAL_f_produce_Scin = new TH1F("h_phot_time_ECAL_f_produce_Scin", "Scint Photon time (front);[ns]", 500, 0., 50.);
-  h_phot_time_ECAL_r_produce_Scin = new TH1F("h_phot_time_ECAL_r_produce_Scin", "Scint Photon time (rear);[ns]", 500, 0., 50.);
-  h_phot_time_ECAL_f_produce_Ceren = new TH1F("h_phot_time_ECAL_f_produce_Ceren", "Cerenkov Photon time (front);[ns]", 500, 0., 50.);
-  h_phot_time_ECAL_r_produce_Ceren = new TH1F("h_phot_time_ECAL_r_produce_Ceren", "Cerenkov Photon time (rear);[ns]", 500, 0., 50.);
-
   this->Clear();
 }
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
@@ -107,20 +83,9 @@ bool CreateTree::Write(TFile *outfile)
   outfile->cd();
   ftree->Write();
 
-
-  h_phot_lambda_ECAL_f_produce_Ceren->Write();
-  h_phot_lambda_ECAL_f_produce_Scin->Write();
-  h_phot_lambda_ECAL_r_produce_Ceren->Write();
-  h_phot_lambda_ECAL_r_produce_Scin->Write();
-  h_phot_time_ECAL_f_produce_Ceren->Write();
-  h_phot_time_ECAL_f_produce_Scin->Write();
-  h_phot_time_ECAL_r_produce_Ceren->Write();
-  h_phot_time_ECAL_r_produce_Scin->Write();
-
   for (auto&& [_, h]: Histograms) {
     h->Write();
   }
-
 
   //h_photon_2D_produce_Ceren->Write();
   //h_photon_2D_receive_Ceren->Write();
@@ -194,15 +159,6 @@ void CreateTree::Clear()
   depositedElecEnergyEcalGap = 0.;
   depositedElecEnergyEcalDet = 0.;
   //  depositedElecEnergySolenoid = 0.;
-
-  ECAL_f_total_C = 0.;
-  ECAL_r_total_S = 0.;
-  ECAL_f_total_S = 0.;
-  ECAL_r_total_C = 0.;
-  ECAL_f_exit_C = 0.;
-  ECAL_r_exit_S = 0.;
-  ECAL_f_exit_S = 0.;
-  ECAL_r_exit_C = 0.;
 
   tot_phot_cer_HCAL = 0.;
   /*

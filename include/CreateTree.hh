@@ -122,19 +122,6 @@ public:
   float depositedIonEnergyECAL_cheren_f_particleID[8];
   float depositedIonEnergyECAL_cheren_r_particleID[8];
 
-  // count produced photons
-  int ECAL_f_total_S;  // used
-  int ECAL_r_total_S;  // used 
-  int ECAL_f_total_C;  // used
-  int ECAL_r_total_C;  // used 
-
-  // count exiting photons from front or rear face into the medium between the xtal and SiPM surface
-  int ECAL_f_exit_S;  // used
-  int ECAL_r_exit_S;  // used 
-  int ECAL_f_exit_C;  // used
-  int ECAL_r_exit_C;  // used 
-
-
   int tot_phot_cer_ECAL_scinti_f_particleID[8];
   int tot_phot_cer_ECAL_scinti_r_particleID[8];
   int tot_phot_cer_ECAL_cheren_f_total;
@@ -145,19 +132,6 @@ public:
 
   /***************** begin to seperate energy into different channels    ******************/
   // float Edep_Tracker_layer[6];
-
-
-  // lambda of photons produced
-  TH1F *h_phot_lambda_ECAL_f_produce_Ceren;
-  TH1F *h_phot_lambda_ECAL_f_produce_Scin;
-  TH1F *h_phot_lambda_ECAL_r_produce_Ceren;
-  TH1F *h_phot_lambda_ECAL_r_produce_Scin;
-
-  // time of photons production
-  TH1F *h_phot_time_ECAL_f_produce_Ceren;
-  TH1F *h_phot_time_ECAL_f_produce_Scin;
-  TH1F *h_phot_time_ECAL_r_produce_Ceren;
-  TH1F *h_phot_time_ECAL_r_produce_Scin;
 
 
   TH1F* createHistogram(const std::string& name, const std::string& title, int nBuckets, double low, double high);

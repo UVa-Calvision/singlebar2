@@ -52,37 +52,29 @@ protected:
   PerProcess<TH1F> createHistogram(const std::string& name, const std::string& title,
                                   int nBuckets, double low, double high) {
     return createPerProcess<TH1F>([&](ProcessType t) {
-        return CreateTree::Instance()->createHistogram(HistogramName(name, t), title, nBuckets, low, high);
+        return CreateTree::Instance()->createHistogram(Impl::HistogramName(name, t), title, nBuckets, low, high);
       });
   }
 
   PerProcess<int> createInt(const std::string& name) {
     return createPerProcess<int>([&](ProcessType t) {
-        return CreateTree::Instance()->createInt(BranchName(name, t));
+        return CreateTree::Instance()->createInt(Impl::BranchName(name, t));
       });
   }
 
   PerProcess<float> createFloat(const std::string& name) {
     return createPerProcess<float>([&](ProcessType t) {
-        return CreateTree::Instance()->createFloat(BranchName(name, t));
+        return CreateTree::Instance()->createFloat(Impl::BranchName(name, t));
       });
   }
   
   PerProcess<std::vector<float>> createVector(const std::string& name) {
     return createPerProcess<std::vector<float>>([&](ProcessType t) {
-        return CreateTree::Instance()->createVector(BranchName(name, t));
+        return CreateTree::Instance()->createVector(Impl::BranchName(name, t));
       });
   }
 
 private:
-  std::string HistogramName(const std::string& name, ProcessType type) {
-    return "h_" + name + "_" + Impl::ID + "_" + (type == ProcessType::Ceren ? "Ceren" : "Scin");
-  }
-
-  std::string BranchName(const std::string& name, ProcessType type) {
-    return Impl::ID + "_" + name + "_" + Impl::Loc + "_" + (type == ProcessType::Ceren ? "C" : "S");
-  }
-
   template <typename T, typename CreateFunc>
   PerProcess<T> createPerProcess(const CreateFunc& f) {
     PerProcess<T> vals;

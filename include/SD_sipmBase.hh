@@ -15,14 +15,15 @@
 
 
 template <typename Impl>
-class SD_sipmBase : public SD_Base<Impl> {
+class SD_sipmBase : public SD_Base<SD_sipmBase<Impl>> {
+  using BaseType = SD_Base<SD_sipmBase<Impl>>;
 public:
   SD_sipmBase(const G4String& name)
-    : SD_Base<Impl>(name)
+    : SD_Base<SD_sipmBase<Impl>>(name)
   {
-    b_detected = SD_Base<Impl>::createInt("detected");
-    h_phot_lambda = SD_Base<Impl>::createHistogram("phot_lambda", "Photon lambda;[nm]", 1250, 0., 1250.);
-    h_phot_time = SD_Base<Impl>::createHistogram("phot_time", "", 500, 0., 50.);
+    b_detected = BaseType::createInt("detected");
+    h_phot_lambda = BaseType::createHistogram("phot_lambda", "Photon lambda;[nm]", 1250, 0., 1250.);
+    h_phot_time = BaseType::createHistogram("phot_time", "", 500, 0., 50.);
   }
 
   void Initialize(G4HCofThisEvent*) override {}
@@ -66,6 +67,14 @@ public:
   void clear() override {}
   void DrawAll() override {}
   void PrintAll() override {}
+
+  static std::string HistogramName(const std::string& name, ProcessType type) {
+    return "h_" + name + "_" + Impl::ID + "_" + (type == ProcessType::Ceren ? "Ceren" : "Scin");
+  }
+
+  static std::string BranchName(const std::string& name, ProcessType type) {
+    return Impl::ID + "_" + name + "_" + Impl::Loc + "_" + (type == ProcessType::Ceren ? "C" : "S");
+  }
 
 private:
   PerProcess<int> b_detected;
