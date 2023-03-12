@@ -34,6 +34,7 @@
 #include "SD_sipmF.hh"
 #include "SD_sipmC.hh"
 #include "SD_sipmS.hh"
+#include "SD_sipmR.hh"
 
 #include "SD_CrystalF.hh"
 #include "SD_CrystalR.hh"
@@ -472,8 +473,9 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   G4LogicalSkinSurface *ecalWrapperSurface_f = new G4LogicalSkinSurface("ecalWrapperSurface_f", ecalWrapperL_f, fFiberWrapSurface);   // to do: change 'fiber' name
   G4LogicalSkinSurface *ecalWrapperSurface_r = new G4LogicalSkinSurface("ecalWrapperSurface_r", ecalWrapperL_r, fFiberWrapSurface);
   G4LogicalSkinSurface *sipmFWindowSurface = new G4LogicalSkinSurface("sipmFWindowSurface", sipmFWindowL, fPMTSurface);  // to do: change "PMT" name
-  G4LogicalSkinSurface *sipmSWindowSurface = new G4LogicalSkinSurface("sipmFWindowSurface", sipmSWindowL, fPMTSurface);
-  G4LogicalSkinSurface *sipmCWindowSurface = new G4LogicalSkinSurface("sipmFWindowSurface", sipmCWindowL, fPMTSurface);
+  G4LogicalSkinSurface *sipmSWindowSurface = new G4LogicalSkinSurface("sipmSWindowSurface", sipmSWindowL, fPMTSurface);
+  G4LogicalSkinSurface *sipmCWindowSurface = new G4LogicalSkinSurface("sipmCWindowSurface", sipmCWindowL, fPMTSurface);
+  G4LogicalSkinSurface *sipmRWindowSurface = new G4LogicalSkinSurface("sipmRWindowSurface", sipmRWindowL, fPMTSurface);
   G4LogicalSkinSurface *sipmBorderSurface = new G4LogicalSkinSurface("sipmBorderSurface", sipmBorderL, fPMTSurface);  // change to case material?
 
 
@@ -518,6 +520,10 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   auto fSDsipmS = new SD_sipmS("/ECAL_sipmS");
   sdman->AddNewDetector(fSDsipmS);
   sipmSWindowL->SetSensitiveDetector(fSDsipmS);
+
+  auto fSDsipmR = new SD_sipmR("/ECAL_sipmR");
+  sdman->AddNewDetector(fSDsipmR);
+  sipmRWindowL->SetSensitiveDetector(fSDsipmR);
 
   auto fSDCrystalF = new SD_CrystalF("/ECAL_CrystalF");
   sdman->AddNewDetector(fSDCrystalF);
@@ -617,6 +623,7 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   VisSipmSWindow->SetForceWireframe(false);
   sipmSWindowL->SetVisAttributes(VisSipmSWindow);
   sipmFWindowL->SetVisAttributes(VisSipmSWindow);
+  sipmRWindowL->SetVisAttributes(VisSipmSWindow);
 
   G4VisAttributes *VisSipmCWindow = new G4VisAttributes(magenta);
   VisSipmCWindow->SetVisibility(true);
