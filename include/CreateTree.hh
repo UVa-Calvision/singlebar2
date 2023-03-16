@@ -133,15 +133,6 @@ public:
   int ECAL_f_exit_C;  // used
   int ECAL_r_exit_C;  // used 
 
-
-  int tot_phot_cer_ECAL_scinti_f_particleID[8];
-  int tot_phot_cer_ECAL_scinti_r_particleID[8];
-  int tot_phot_cer_ECAL_cheren_f_total;
-  int tot_phot_cer_ECAL_cheren_r_total;
-  int tot_phot_cer_ECAL_cheren_f_particleID[8];
-  int tot_phot_cer_ECAL_cheren_r_particleID[8];
-  int tot_phot_cer_HCAL;
-
   // counts of photons detected in (F)ront SiPM, rear (C)herenkov SiPM, rear (S)cint SiPM
   int SDFdetected_f_S;   // used
   int SDFdetected_f_C;   // used
@@ -151,6 +142,12 @@ public:
 
   int SDSdetected_r_S;   // used
   int SDSdetected_r_C;   // used
+
+  // mean photon detection time, or detection time for single optical photon runs
+  float SDCtime_r_S;     // used
+  float SDCtime_r_C;     // used
+  float SDStime_r_S;     // used
+  float SDStime_r_C;     // used
 
   /***************** begin to seperate energy into different channels    ******************/
   // float Edep_Tracker_layer[6];

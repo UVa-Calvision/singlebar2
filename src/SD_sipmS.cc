@@ -58,11 +58,13 @@ SD_sipmS::ProcessHits( G4Step*       theStep,
   // count some stuff
   if (processName == "Cerenkov") {
     CreateTree::Instance()->SDSdetected_r_C++;
+    CreateTree::Instance()->SDStime_r_C += gTime;
     CreateTree::Instance()->h_phot_lambda_SiPMS_r_Ceren->Fill(photWL);
     CreateTree::Instance()->h_phot_time_SiPMS_Ceren->Fill(gTime);
   }
   if (processName == "Scintillation") {
     CreateTree::Instance()->SDSdetected_r_S++;
+    CreateTree::Instance()->SDStime_r_S += gTime;
     CreateTree::Instance()->h_phot_lambda_SiPMS_r_Scin->Fill(photWL);
     CreateTree::Instance()->h_phot_time_SiPMS_Scin->Fill(gTime);
   }

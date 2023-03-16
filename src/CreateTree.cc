@@ -80,6 +80,11 @@ CreateTree::CreateTree(const TString name)
   this->GetTree()->Branch("SDCdetected_r_C", &this->SDCdetected_r_C, "SDCdetected_r_C/I");
   this->GetTree()->Branch("SDSdetected_r_S", &this->SDSdetected_r_S, "SDSdetected_r_S/I");
   this->GetTree()->Branch("SDSdetected_r_C", &this->SDSdetected_r_C, "SDSdetected_r_C/I");
+  this->GetTree()->Branch("SDCtime_r_S", &this->SDCtime_r_S, "SDCtime_r_S/F");
+  this->GetTree()->Branch("SDCtime_r_C", &this->SDCtime_r_C, "SDCtime_r_C/F");
+  this->GetTree()->Branch("SDStime_r_S", &this->SDStime_r_S, "SDStime_r_S/F");
+  this->GetTree()->Branch("SDStime_r_C", &this->SDStime_r_C, "SDStime_r_C/F");
+
 
   //detected photons 
   h_phot_lambda_SiPMF_f_Scin = new TH1F("h_phot_lambda_SiPMF_f_Scin", "Scint Photon lambda SiPMF;[nm]", 
@@ -248,8 +253,11 @@ void CreateTree::Clear()
   SDSdetected_r_S = 0.;
   SDSdetected_r_C = 0.;
 
+  SDCtime_r_S = 0;     
+  SDCtime_r_C = 0;    
+  SDStime_r_S = 0; 
+  SDStime_r_C = 0;
 
-  tot_phot_cer_HCAL = 0.;
   /*
   for (int iLayer = 0; iLayer < 6; iLayer++)
   {

@@ -46,7 +46,10 @@ propagateScintillation = 1
 switchOnCerenkov = 0
 propagateCerenkov = 0
 ```
+example run command:
+``./CV_Testbeam -c templateOP.cfg -m run1Mopticalphoton.mac -o 1Mopticalphoton_1.root`
 
+```
 
 ## Use the runner script
 

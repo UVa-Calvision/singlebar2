@@ -76,6 +76,11 @@ void EventAction::BeginOfEventAction(const G4Event *evt)
   CreateTree::Instance()->polarization->at(0) = polx;
   CreateTree::Instance()->polarization->at(1) = poly;
   CreateTree::Instance()->polarization->at(2) = polz;
+
+  CreateTree::Instance()->SDCtime_r_C = 0;
+  CreateTree::Instance()->SDCtime_r_S = 0;
+  CreateTree::Instance()->SDStime_r_C = 0;
+  CreateTree::Instance()->SDStime_r_S = 0;
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
@@ -116,6 +121,21 @@ void EventAction::EndOfEventAction(const G4Event *evt)
     }
   }
 */
+
+  // arerage photon arrival
+  CreateTree::Instance()->SDCdetected_r_C > 0 ?
+    CreateTree::Instance()->SDCtime_r_C /= CreateTree::Instance()->SDCdetected_r_C : 
+    CreateTree::Instance()->SDCtime_r_C = -1;
+  CreateTree::Instance()->SDCtime_r_S > 0 ?
+    CreateTree::Instance()->SDCtime_r_S /= CreateTree::Instance()->SDCdetected_r_S : 
+    CreateTree::Instance()->SDCtime_r_S = -1;
+  CreateTree::Instance()->SDStime_r_C > 0 ?
+    CreateTree::Instance()->SDStime_r_C /= CreateTree::Instance()->SDSdetected_r_C : 
+    CreateTree::Instance()->SDStime_r_C = -1;
+  CreateTree::Instance()->SDStime_r_S > 0 ?
+    CreateTree::Instance()->SDStime_r_S /= CreateTree::Instance()->SDSdetected_r_S : 
+    CreateTree::Instance()->SDStime_r_S = -1;
+
 
   CreateTree::Instance()->Fill();
 }
