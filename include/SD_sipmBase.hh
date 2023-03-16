@@ -17,6 +17,7 @@ public:
   {
     // SiPM histograms and branches
     b_detected = BaseType::createInt("detected");
+    b_average_time = BaseType::createFloat("time");
     h_phot_lambda = BaseType::createHistogram("phot_lambda", "Photon lambda;[nm]", 1250, 0., 1250.);
     h_phot_time = BaseType::createHistogram("phot_time", "Photon time;[ns]", 500, 0., 50.);
   }
@@ -28,6 +29,7 @@ public:
     handleOpticalPhoton(theStep,
       [this, theStep] (ProcessType process, float photWL, G4double gTime) {
         b_detected[process]++;
+        b_average_time[process] += gTime;
         h_phot_lambda[process].Fill(photWL);
         h_phot_time[process].Fill(gTime);
 
@@ -60,6 +62,7 @@ public:
 
 private:
   PerProcess<int> b_detected;
+  PerProcess<float> b_average_time;
   PerProcess<TH1F> h_phot_lambda;
   PerProcess<TH1F> h_phot_time;
 };

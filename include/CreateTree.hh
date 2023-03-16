@@ -116,7 +116,6 @@ public:
   int tot_phot_cer_ECAL_cheren_f_particleID[8];
   int tot_phot_cer_ECAL_cheren_r_particleID[8];
   int tot_phot_cer_HCAL;
-
   */
 
   // ----- Histograms

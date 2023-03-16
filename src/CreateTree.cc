@@ -129,6 +129,7 @@ void CreateTree::Clear()
   //  depositedElecEnergySolenoid = 0.;
 
   // tot_phot_cer_HCAL = 0.;
+
   /*
   for (int iLayer = 0; iLayer < 6; iLayer++)
   {

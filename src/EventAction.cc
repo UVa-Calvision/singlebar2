@@ -20,7 +20,32 @@
 #include <assert.h>
 #include <vector>
 
+#include "SD_sipmR.hh"
+#include "SD_sipmS.hh"
+#include "SD_sipmC.hh"
+#include "SD_sipmF.hh"
+
+
 using namespace CLHEP;
+
+namespace {
+
+template <typename SiPM>
+void averagePhotonArrivalTime() {
+  for (const ProcessType process : processTypes) {
+    float& time = CreateTree::Instance()->lookupBranch<float>(SiPM::BranchName("time", process));
+    const int detected = CreateTree::Instance()->lookupBranch<int>(SiPM::BranchName("detected", process));
+
+    if (time > 0) {
+      time /= static_cast<float>(detected);
+    } else {
+      time = -1.0;
+    }
+  }
+}
+
+}; // namespace ::
+
 
 EventAction::EventAction(const G4int &modulo) : printModulo(modulo), fDRHCID(-1)
 {
@@ -59,6 +84,13 @@ void EventAction::BeginOfEventAction(const G4Event *evt)
   convertThreeVector(*b_initialPosition, vertex->GetPosition() / mm);
   convertFourVector(*b_initialMomentum, particle->GetMomentum() / GeV, particle->GetTotalEnergy() / GeV);
   convertThreeVector(*b_polarization, particle->GetPolarization());
+
+  for (const ProcessType process : processTypes) {
+    CreateTree::Instance()->lookupBranch<float>(SD_sipmS::BranchName("time", process)) = 0;
+    CreateTree::Instance()->lookupBranch<float>(SD_sipmR::BranchName("time", process)) = 0;
+    CreateTree::Instance()->lookupBranch<float>(SD_sipmC::BranchName("time", process)) = 0;
+    CreateTree::Instance()->lookupBranch<float>(SD_sipmF::BranchName("time", process)) = 0;
+  }
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
@@ -97,6 +129,12 @@ void EventAction::EndOfEventAction(const G4Event *evt)
     }
   }
 */
+
+  // average photon arrival
+  averagePhotonArrivalTime<SD_sipmS>();
+  averagePhotonArrivalTime<SD_sipmR>();
+  averagePhotonArrivalTime<SD_sipmC>();
+  averagePhotonArrivalTime<SD_sipmF>();
 
   CreateTree::Instance()->Fill();
 }
