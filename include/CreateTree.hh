@@ -155,6 +155,7 @@ private:
   // Need unique_ptrs so that memory locations aren't changed when map resizes.
   std::map<std::string, std::unique_ptr<float>> TreeFloats;
   std::map<std::string, std::unique_ptr<int>> TreeInts;
+  std::map<std::string, std::unique_ptr<std::vector<int>>> TreeIntVectors;
   std::map<std::string, std::unique_ptr<std::vector<float>>> TreeFloatVectors;
 
   // Helper function for creating branches of ints, floats, doubles, etc.
@@ -199,11 +200,15 @@ private:
 
 template <> int* CreateTree::createBranch(const std::string&);
 template <> float* CreateTree::createBranch(const std::string&);
+template <> std::vector<int>* CreateTree::createBranch<std::vector<int>>(const std::string&);
+template <> std::vector<float>* CreateTree::createBranch<std::vector<float>>(const std::string&);
 template <> std::vector<float>* CreateTree::createBranch<float, 3>(const std::string&);
 template <> std::vector<float>* CreateTree::createBranch<float, 4>(const std::string&);
 
 template <> int& CreateTree::lookupBranch(const std::string&);
 template <> float& CreateTree::lookupBranch(const std::string&);
+template <> std::vector<int>& CreateTree::lookupBranch<std::vector<int>>(const std::string&);
+template <> std::vector<float>& CreateTree::lookupBranch<std::vector<float>>(const std::string&);
 template <> std::vector<float>& CreateTree::lookupBranch<float, 3>(const std::string&);
 template <> std::vector<float>& CreateTree::lookupBranch<float, 4>(const std::string&);
 

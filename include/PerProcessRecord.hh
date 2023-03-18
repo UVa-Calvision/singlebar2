@@ -76,7 +76,11 @@ private:
  */
 template <typename HandleFunc>
 bool handleOpticalPhoton(const G4Step* step, const HandleFunc& handle) {
-  G4Track* track = step->GetTrack();
+  return handleOpticalPhoton(step->GetTrack(), step->GetPreStepPoint()->GetGlobalTime(), handle);
+}
+
+template <typename HandleFunc>
+bool handleOpticalPhoton(const G4Track* track, G4double time, const HandleFunc& handle) {
   const G4ParticleDefinition* particleType = track->GetDefinition();
 
   if (particleType == G4OpticalPhoton::OpticalPhotonDefinition()) {
@@ -89,13 +93,12 @@ bool handleOpticalPhoton(const G4Step* step, const HandleFunc& handle) {
     // Remove non-optical tracks
     const float photWL = MyMaterials::fromEvToNm(track->GetTotalEnergy() / eV);
     if (photWL > 1000 || photWL < 300) {
-      track->SetTrackStatus(fKillTrackAndSecondaries);
+      ((G4Track*) track)->SetTrackStatus(fKillTrackAndSecondaries);
       return false;
     }
 
     // Let the implementation record the optical photon
-    G4double gTime = step->GetPreStepPoint()->GetGlobalTime();
-    handle(process, photWL, gTime);
+    handle(process, photWL, time);
 
     return true;
   }

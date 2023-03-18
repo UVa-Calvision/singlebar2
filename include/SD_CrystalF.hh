@@ -7,7 +7,9 @@ class SD_CrystalF : public SD_CrystalBase<SD_CrystalF>
 {
 public:
 
-  SD_CrystalF(const G4String& name) : SD_CrystalBase<SD_CrystalF>(name) {}
+  SD_CrystalF(const G4String& name, G4double length, G4double z_offset)
+    : SD_CrystalBase<SD_CrystalF>(name, length, z_offset)
+    {}
 
   const static std::string ID;
 };

@@ -195,6 +195,26 @@ int& CreateTree::lookupBranch(const std::string& name) {
 }
 
 template <>
+std::vector<int>* CreateTree::createBranch<std::vector<int>>(const std::string& name) {
+  return createVectorBranch<int, 0>(name, TreeIntVectors, "vector<int>");
+}
+
+template <>
+std::vector<int>& CreateTree::lookupBranch<std::vector<int>>(const std::string& name) {
+  return *(TreeIntVectors[name]);
+}
+
+template <>
+std::vector<float>* CreateTree::createBranch<std::vector<float>>(const std::string& name) {
+  return createVectorBranch<float, 0>(name, TreeFloatVectors, "vector<float>");
+}
+
+template <>
+std::vector<float>& CreateTree::lookupBranch<std::vector<float>>(const std::string& name) {
+  return *(TreeFloatVectors[name]);
+}
+
+template <>
 std::vector<float>* CreateTree::createBranch<float, 3>(const std::string& name) {
   return createVectorBranch<float, 3>(name, TreeFloatVectors, "vector<float>");
 }
