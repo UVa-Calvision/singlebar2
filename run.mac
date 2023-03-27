@@ -47,4 +47,4 @@
 #/gps/particle gamma
 #/gps/ang/type iso
 
-/run/beamOn 10
+/run/beamOn 100

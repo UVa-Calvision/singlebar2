@@ -38,10 +38,10 @@
 #include <fstream>
 #include <utility>
 
-#include "ConfigFile.hh"
 #include "MyMaterials.hh"
 #include "LedFiberTiming.hh"
 #include "SurfaceProperty.hh"
+#include "ConfigEnvironment.hh"
 
 #include "G4Material.hh"
 #include "G4VUserDetectorConstruction.hh"
@@ -61,8 +61,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction
 {
 public:
   //! ctor
-  DetectorConstruction();
-  DetectorConstruction(const string &configFileName);
+  DetectorConstruction(ConfigEnvironment& environ);
 
   //! dtor
   ~DetectorConstruction();
@@ -82,6 +81,8 @@ public:
   Fiber *GetFiber() { return &fib; };
 
 private:
+  ConfigEnvironment& env;
+
   G4bool checkOverlaps;
 
   G4double expHall_x;

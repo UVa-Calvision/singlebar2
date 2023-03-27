@@ -69,6 +69,7 @@
 #include "EventAction.hh"
 #include "SteppingVerbose.hh"
 #include "CreateTree.hh"
+#include "ConfigEnvironment.hh"
 
 #ifdef G4VIS_USE
 #include "G4VisExecutive.hh"
@@ -122,7 +123,8 @@ int main(int argc,char** argv)
   cout<<"=====>   C O N F I G U R A T I O N   <====\n"<<endl;
   
   G4cout << "Configuration file: '" << dconfig << "'" << G4endl;
-  ConfigFile config(dconfig);
+  ConfigEnvironment env(dconfig);
+  const ConfigFile& config = env.file();
   
   
   // Seed the random number generator manually
@@ -200,7 +202,7 @@ int main(int argc,char** argv)
   G4cout << ">>> Define physics list::end <<<" << G4endl; 
   
   G4cout << ">>> Define DetectorConstruction::begin <<<" << G4endl; 
-  DetectorConstruction* detector = new DetectorConstruction(dconfig);
+  DetectorConstruction* detector = new DetectorConstruction(env);
   runManager-> SetUserInitialization(detector);
   G4cout << ">>> Define DetectorConstruction::end <<<" << G4endl; 
   

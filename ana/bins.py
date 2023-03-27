@@ -26,7 +26,7 @@ for event in tree:
   if i == target_index:
     print("Found bin {}".format(i))
     print("Front:")
-    f_energy = np.array(event.ECAL_f_scin_bin_energy).flatten('C').astype('float')
+    f_energy = np.array(event.ECAL_f_hit_energy).flatten('C').astype('float')
     print(f_energy.shape[0])
     f_frontOffset = event.ECAL_f_frontOffset
     print(f_frontOffset)
@@ -34,7 +34,7 @@ for event in tree:
     print(f_crystalLength)
 
     print("Rear:")
-    r_energy = np.array(event.ECAL_r_scin_bin_energy).flatten('C').astype('float')
+    r_energy = np.array(event.ECAL_r_hit_energy).flatten('C').astype('float')
     print(r_energy.shape[0])
     r_frontOffset = event.ECAL_r_frontOffset
     print(r_frontOffset)
@@ -50,17 +50,7 @@ for event in tree:
 r_frontOffset -= f_frontOffset
 f_frontOffset -= f_frontOffset
 
-tc = r.TCanvas()
-mg = r.TMultiGraph("mg", "Total Scintillation Energy Per Bin;z [mm];E [GeV]")
-
-g_f = makeGraph(f_energy, f_frontOffset, f_crystalLength)
-g_r = makeGraph(r_energy, r_frontOffset, r_crystalLength)
-
-mg.Add(g_f)
-mg.Add(g_r)
-mg.Draw("AL")
-
-tc.Update()
+# CONSTRUCT [POS, TIME] BINS FOR ENERGY DEPOSITS
 
 print('Hit return to exit')
 sys.stdout.flush() 

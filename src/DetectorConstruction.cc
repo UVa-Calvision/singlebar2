@@ -155,13 +155,14 @@ G4double layerPosition(
 } // namespace ::
 
 
-DetectorConstruction::DetectorConstruction(const string &configFileName)
+DetectorConstruction::DetectorConstruction(ConfigEnvironment& e)
+  : env(e)
 {
   //---------------------------------------
   //------------- Parameters --------------
   //---------------------------------------
 
-  ConfigFile config(configFileName);
+  const ConfigFile& config = env.file();
 
 
   //------------- used in Single bar --------------
@@ -338,9 +339,7 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   G4VSolid *ecalWrapper_shellS_r = new G4SubtractionSolid("ecalWrapper_shellS_r", ecalWrapper_outerS_r, ecalWrapper_innerS_r);  // 6 sided wrapper
 
   G4IntersectionSolid *ecalWrapperS_r = nullptr;
-  const bool use_sipmR_wrapper = true;    // switch for wrapper to cover no faces or a single face for rear crystal (sipmR needs no faces)
-  
-  if (use_sipmR_wrapper) {
+  if (env.useSipmR()) {
     // shift outer wrapper block to cut off front face of wapper to xtal surface
     G4IntersectionSolid *ecalWrapperS_r1 = new G4IntersectionSolid("ecalWrapperS_r1",ecalWrapper_shellS_r,ecalWrapper_outerS_r,
                   NULL,{0,0,-(wrapper_gap + wrap_thick)});
@@ -432,41 +431,48 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   // crystal + wrapper assemblies
   G4AssemblyVolume* xtalAssembly = new G4AssemblyVolume();
 
-  // Both xtal with SiPM R
-  const std::vector<Layer_t> sipmRLayers = {
-    { baffle_z,                               {}, {sipmAssembly_f} },
-    { ecal_front_length,                      {ecalCrystalL_f, ecalWrapperL_f}, {} },
-    { wrapper_gap + wrap_thick + ecal_z_gap,  {}, {} },
-    { baffle_z,                               {}, {sipmAssembly_R} },
-    { ecal_rear_length,                       {ecalCrystalL_r, ecalWrapperL_r}, {} },
-    { baffle_z,                               {}, {sipmAssembly_r} }
-  };
-
-  // Only rear xtal with rear SiPMs
-  const std::vector<Layer_t> singleCrystalLayers = {
-    { baffle_z,                                      {}, {} },
-    { ecal_front_length,                             {}, {} },
-    { 2.0 * (wrapper_gap + wrap_thick) + ecal_z_gap, {}, {} },
-    { ecal_rear_length,                              {ecalCrystalL_r, ecalWrapperL_r}, {} },
-    { baffle_z,                                      {}, {sipmAssembly_r} }
-  };
-
-  // Front and rear xtal with front and rear SiPMs
-  const std::vector<Layer_t> doubleCrystalLayers = {
-    { baffle_z,                                      {}, {sipmAssembly_f} },
-    { ecal_front_length,                             {ecalCrystalL_f, ecalWrapperL_f}, {} },
-    { 2.0 * (wrapper_gap + wrap_thick) + ecal_z_gap, {}, {} },
-    { ecal_rear_length,                              {ecalCrystalL_r, ecalWrapperL_r}, {} },
-    { baffle_z,                                      {}, {sipmAssembly_r} }
-  };
+  const int layerOption = env.file().read<int>("detector_layers");
+  std::vector<Layer_t> layers;
+  switch (layerOption) {
+    case 1: // single layer
+      layers = {
+          { baffle_z,                                      {}, {} },
+          { ecal_front_length,                             {}, {} },
+          { 2.0 * (wrapper_gap + wrap_thick) + ecal_z_gap, {}, {} },
+          { ecal_rear_length,                              {ecalCrystalL_r, ecalWrapperL_r}, {} },
+          { baffle_z,                                      {}, {sipmAssembly_r} }
+        };
+      break;
+    case 2: // double layer
+      layers = {
+          { baffle_z,                                      {}, {sipmAssembly_f} },
+          { ecal_front_length,                             {ecalCrystalL_f, ecalWrapperL_f}, {} },
+          { 2.0 * (wrapper_gap + wrap_thick) + ecal_z_gap, {}, {} },
+          { ecal_rear_length,                              {ecalCrystalL_r, ecalWrapperL_r}, {} },
+          { baffle_z,                                      {}, {sipmAssembly_r} }
+        };
+      break;
+    case 3: // SiPM R
+      layers = {
+          { baffle_z,                               {}, {sipmAssembly_f} },
+          { ecal_front_length,                      {ecalCrystalL_f, ecalWrapperL_f}, {} },
+          { wrapper_gap + wrap_thick + ecal_z_gap,  {}, {} },
+          { baffle_z,                               {}, {sipmAssembly_R} },
+          { ecal_rear_length,                       {ecalCrystalL_r, ecalWrapperL_r}, {} },
+          { baffle_z,                               {}, {sipmAssembly_r} }
+        };
+      break;
+    default:
+      G4cerr << "<ConfigEnvironment>: Invalid detector layer option: " << layerOption << G4endl;
+      exit(-1);
+  }
 
   const G4ThreeVector assemblyOffset{0 , 0, -baffle_z};
-  const std::vector<Layer_t>& layers = sipmRLayers;     // change this reference so crystals also know their z-offsets
+  const unsigned int rearCrystalLayerIndex = env.useSipmR() ? 4 : 3;
 
   // Currently layer choice is hard coded. Need to also comment / uncomment appropriate ecalWrapper_f code.
   layeredAssembly(xtalAssembly, layers, assemblyOffset, Ra, true);
 
-  unsigned int rearCrystalLayerIndex = use_sipmR_wrapper ? 4 : 3;
   G4cout << "Front face of rear crystal placement at z = " << (layerPosition(layers, assemblyOffset, rearCrystalLayerIndex) / mm) << " mm" << G4endl;
   
   // set surface properties
@@ -530,13 +536,15 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
 
   G4cout << "Ecal Front Start: " << layerPosition(layers, assemblyOffset, 1) << G4endl
          << "Ecal Front End  : " << layerPosition(layers, assemblyOffset, 1) + ecal_front_length << G4endl;
-  auto fSDCrystalF = new SD_CrystalF("/ECAL_CrystalF", ecal_front_length, z0 + layerPosition(layers, assemblyOffset, 1));
+  env.SetFrontCrystalDimensions(z0 + layerPosition(layers, assemblyOffset, 1), ecal_front_length);
+  auto fSDCrystalF = new SD_CrystalF("/ECAL_CrystalF", env);
   sdman->AddNewDetector(fSDCrystalF);
   ecalCrystalL_f->SetSensitiveDetector(fSDCrystalF);
 
   G4cout << "Ecal Rear Start: " << layerPosition(layers, assemblyOffset, rearCrystalLayerIndex) << G4endl
          << "Ecal Rear End  : " << layerPosition(layers, assemblyOffset, rearCrystalLayerIndex) + ecal_rear_length << G4endl;
-  auto fSDCrystalR = new SD_CrystalR("/ECAL_CrystalR", ecal_rear_length, z0 + layerPosition(layers, assemblyOffset, rearCrystalLayerIndex));
+  env.SetRearCrystalDimensions(z0 + layerPosition(layers, assemblyOffset, rearCrystalLayerIndex), ecal_rear_length);
+  auto fSDCrystalR = new SD_CrystalR("/ECAL_CrystalR", env);
   sdman->AddNewDetector(fSDCrystalR);
   ecalCrystalL_r->SetSensitiveDetector(fSDCrystalR);
 

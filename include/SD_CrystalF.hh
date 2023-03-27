@@ -3,15 +3,22 @@
 
 #include "SD_CrystalBase.hh"
 
-class SD_CrystalF : public SD_CrystalBase<SD_CrystalF>
+class SD_CrystalF final : public SD_CrystalBase<SD_CrystalF>
 {
+  using CrystalBase = SD_CrystalBase<SD_CrystalF>;
+
 public:
 
-  SD_CrystalF(const G4String& name, G4double length, G4double z_offset)
-    : SD_CrystalBase<SD_CrystalF>(name, length, z_offset)
+  SD_CrystalF(const G4String& name, const ConfigEnvironment& e)
+    : SD_CrystalBase<SD_CrystalF>(name, e, this)
     {}
 
   const static std::string ID;
+
+  void writeDimensions() {
+    *b_crystalLength = env.rearCrystalLength();
+    *b_frontOffset = env.rearCrystalFront();
+  }
 };
 
 #endif
