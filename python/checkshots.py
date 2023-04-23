@@ -4,7 +4,8 @@ import sys
 
 
 fname = '1Mopticalphoton_1.root'
-
+if len(sys.argv) > 1:
+  fname = sys.argv[1]
 
 tf = r.TFile(fname)
 tree = tf.Get("tree")
@@ -40,18 +41,18 @@ tc_ana = r.TCanvas()
 tc_ana.Divide(3,2)
 tc_ana.cd(1)
 h_lambda_det = r.TH1F("h_lambda_det","single photon lambda,detected;nm",50,300,1000)
-tree.Draw(lambd+">>h_lambda_det","SDSdetected_r_S+SDCdetected_r_S>0")
+tree.Draw(lambd+">>h_lambda_det","SiPMS_detected_r_S+SiPMC_detected_r_S>0")
 tc_ana.cd(2)
 h_z_det = r.TH1F("h_z_det","starting Z position, detected;mm",50,200,420)
-tree.Draw("inputInitialPosition[2]>>h_z_det","SDSdetected_r_S+SDCdetected_r_S>0")
+tree.Draw("inputInitialPosition[2]>>h_z_det","SiPMS_detected_r_S+SiPMC_detected_r_S>0")
 tc_ana.cd(3)
 h_z_det_v_lambda = r.TH2F("h_z_det_v_lambda","lambda vs positiondetected;nm;mm",20,300,1000,20,200,420)
-tree.Draw("inputInitialPosition[2]:"+lambd+">>h_z_det_v_lambda","SDSdetected_r_S+SDCdetected_r_S>0","colz")
+tree.Draw("inputInitialPosition[2]:"+lambd+">>h_z_det_v_lambda","SiPMS_detected_r_S+SiPMC_detected_r_S>0","colz")
 tc_ana.cd(4)
 h_pz_det = r.TH1F("h_pz_det","detected vs Zstart, pZ>0;mm",50,200,420)
-tree.Draw("inputInitialPosition[2]>>h_pz_det","SDSdetected_r_S+SDCdetected_r_S>0&inputMomentum[2]>0")
+tree.Draw("inputInitialPosition[2]>>h_pz_det","SiPMS_detected_r_S+SiPMC_detected_r_S>0&inputMomentum[2]>0")
 h_nz_det = r.TH1F("h_nz_det","detected vs Zstart, pZ<0;mm",50,200,420)
-tree.Draw("inputInitialPosition[2]>>h_nz_det","SDSdetected_r_S+SDCdetected_r_S>0&inputMomentum[2]<0")
+tree.Draw("inputInitialPosition[2]>>h_nz_det","SiPMS_detected_r_S+SiPMC_detected_r_S>0&inputMomentum[2]<0")
 h_nz_det.SetLineColor(r.kRed)
 h_pz_det.Draw()
 h_nz_det.Draw("same")
@@ -68,7 +69,7 @@ for event in tree:
     print("Start P,E = ({:.1f},{:.1f},{:.1f},{:.1f}) eV".format(
           event.inputMomentum[0]*1e9,event.inputMomentum[1]*1e9,
           event.inputMomentum[2]*1e9,event.inputMomentum[3]*1e9))
-    print("Detected:",event.SDSdetected_r_S+event.SDCdetected_r_S>0)
+    print("Detected:",event.SiPMS_detected_r_S+event.SiPMC_detected_r_S>0)
 
     i=i+1
     if i>=10: break

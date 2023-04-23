@@ -39,6 +39,10 @@ protected:
   PerProcess<std::vector<float>> createVector(const std::string& name) {
     return PerProcess<std::vector<float>>::createBranch(Impl::BranchName, name);
   }
+
+  PerProcess<std::vector<int>> createIntVector(const std::string& name) {
+    return PerProcess<std::vector<int>>::createBranch(Impl::BranchName, name);
+  }
 };
 
 #endif

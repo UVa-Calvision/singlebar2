@@ -15,10 +15,8 @@ public:
 
   const static std::string ID;
 
-  void writeDimensions() {
-    *b_crystalLength = env.rearCrystalLength();
-    *b_frontOffset = env.rearCrystalFront();
-  }
+  G4double crystalLength() const { return env.frontCrystalLength(); }
+  G4double frontOffset() const { return env.frontCrystalFront(); } 
 };
 
 #endif

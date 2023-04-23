@@ -4,6 +4,9 @@
 #include "SD_Base.hh"
 #include "EnergyDepositHit.hh"
 #include "ConfigEnvironment.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4SDManager.hh"
+#include "PhotonTrackingInformation.hh"
 #include <numeric>
 
 /*
@@ -25,50 +28,72 @@ public:
     b_ECAL_exit = BaseType::createInt("exit");
     h_phot_produce_lambda = BaseType::createHistogram("phot_produce_lambda", "Photon lambda production;[nm]", 1250, 0., 1250.);
     h_phot_produce_time = BaseType::createHistogram("phot_produce_time", "Photon time production;[ns]", 500, 0., 50.);
-    // h_phot_z_pos = BaseType::createHistogram("phot_z_pos", "Photon z production;[nm]", 500, 50., 300.);
-    h_phot_angle_azimuthal = BaseType::createHistogram("phot_angle_azimuthal", "Photon Azimuthal Angle;[deg]", 100, -180., 180.);
-    h_phot_angle_polar = BaseType::createHistogram("phot_angle_polar", "Photon Polar Angle;[deg]", 100, 0., 180.);
-    h_phot_init_x = BaseType::createHistogram("phot_init_x", "Photon Init px", 100, -1.0, 1.0);
-    h_phot_init_y = BaseType::createHistogram("phot_init_y", "Photon Init py", 100, -1.0, 1.0);
 
-    b_hit_energy = CreateTree::Instance()->createBranch<std::vector<float>>(SingleBranchName("hit_energy"));
-    b_hit_time   = CreateTree::Instance()->createBranch<std::vector<float>>(SingleBranchName("hit_time"));
-    b_hit_zPos   = CreateTree::Instance()->createBranch<std::vector<float>>(SingleBranchName("hit_zPos"));
+    CreateTree::Instance()->WriteObject(impl->crystalLength(), SingleBranchName("crystalLength"));
+    CreateTree::Instance()->WriteObject(impl->frontOffset(), SingleBranchName("frontOffset"));
 
-    b_crystalLength = CreateTree::Instance()->createBranch<float>(SingleBranchName("crystalLength"));
-    b_frontOffset = CreateTree::Instance()->createBranch<float>(SingleBranchName("frontOffset"));
+    if (env.recordHits()) {
+      b_hit_energy = CreateTree::Instance()->createBranch<std::vector<float>>(SingleBranchName("hit_energy"));
+      b_hit_time   = CreateTree::Instance()->createBranch<std::vector<float>>(SingleBranchName("hit_time"));
+      b_hit_zPos   = CreateTree::Instance()->createBranch<std::vector<float>>(SingleBranchName("hit_zPos"));
+      b_hit_photons = BaseType::createIntVector("hit_photon");
+      b_hit_detected = BaseType::createIntVector("hit_detected");
+      h_phot_produce_pos = BaseType::createHistogram("phot_produce_pos", "Photon creation position;[mm]", 100, 200., 400.);
 
-    // Register hit collection ID
-    auto sd_manager = G4SDManager::GetSDMpointer();
-    sd_manager->AddNewCollection(name, HitCollectionName("energy_deposit"));
-    EDHitCollectionID = sd_manager->GetCollectionID(HitCollectionName("energy_deposit"));
-    depositHitCollection = nullptr;
+      h_phot_delay_time = BaseType::createHistogram("phot_delay_time", "Photon delay time;[ns]", 500, 0., 50.);
+
+
+      // Register hit collection ID
+      auto sd_manager = G4SDManager::GetSDMpointer();
+      sd_manager->AddNewCollection(name, HitCollectionName("energy_deposit"));
+      EDHitCollectionID = sd_manager->GetCollectionID(HitCollectionName("energy_deposit"));
+      depositHitCollection = nullptr;
+    }
   }
 
   void Initialize(G4HCofThisEvent* hc) override {
-    // Can probably not use hit collections and reduce this ID lookup stuff
-    // auto sd_manager = G4SDManager::GetSDMpointer();
-    hc->AddHitsCollection(EDHitCollectionID, new EDHitCollection());
-    depositHitCollection = dynamic_cast<EDHitCollection*>(hc->GetHC(EDHitCollectionID));
-
-    // *b_scin_bin_total = std::vector<int>(BSPCollection->nBins(), 0);
-    // *b_scin_bin_energy = std::vector<float>(BSPCollection->nBins(), 0.);
+    if (env.recordHits()) {
+      hc->AddHitsCollection(EDHitCollectionID, new EDHitCollection());
+      depositHitCollection = dynamic_cast<EDHitCollection*>(hc->GetHC(EDHitCollectionID));
+    }
   }
 
-  G4bool ProcessHits(G4Step* theStep, G4TouchableHistory* ) override {
-    // Record energy deposition in the xtal
+  G4bool ProcessHits(G4Step* theStep, G4TouchableHistory* ) override { // Record energy deposition in the xtal
     const G4double energy = theStep->GetTotalEnergyDeposit();
     const G4double energyIon = energy - theStep->GetNonIonizingEnergyDeposit();
 
-    *b_depositedEnergy += energy / eV;
-    *b_depositedIonEnergy += energyIon / eV;
+    *b_depositedEnergy += energy / GeV;
+    *b_depositedIonEnergy += energyIon / GeV;
 
     // Only record hit for initial particle
-    if (theStep->GetTrack()->GetTrackID() == 1) {
-      const double sample = CLHEP::RandFlat::shoot(0.0, 1.0);
-      const G4double zPos = (theStep->GetPreStepPoint()->GetPosition() + sample * theStep->GetDeltaPosition()).z();
-      const G4double time = theStep->GetPreStepPoint()->GetGlobalTime()  + sample * theStep->GetDeltaTime();
-      depositHitCollection->insert(new EnergyDepositHit(energyIon, time, zPos));
+    if (env.recordHits() && theStep->GetTrack()->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition()) {
+      // Don't bother recording low energy deposits e.g. < 0.5 MeV
+      if (energyIon / MeV > 0.0) {
+        const double sample = 0.0; // CLHEP::RandFlat::shoot(0.0, 1.0);
+        const G4double zPos = (theStep->GetPreStepPoint()->GetPosition() + sample * theStep->GetDeltaPosition()).z();
+        const G4double time = theStep->GetPreStepPoint()->GetGlobalTime() + sample * theStep->GetDeltaTime();
+
+        auto hit = new EnergyDepositHit(energyIon, time, zPos);
+        for (auto& secondary : *theStep->GetfSecondary()) {
+          if (secondary->GetCurrentStepNumber() == 0 && 
+            secondary->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()) {
+            const std::optional<ProcessType> processType = readProcess(secondary->GetCreatorProcess()->GetProcessName());
+            if (processType) {
+              const float photWL = MyMaterials::fromEvToNm(secondary->GetTotalEnergy() / eV);
+              if (photWL >= 300 && photWL <= 1000) {
+                h_phot_delay_time[*processType].Fill(secondary->GetGlobalTime() - time);
+                hit->photonCount()[*processType]++;
+                secondary->SetUserInformation(new PhotonTrackingInformation(secondary, hit));
+                h_phot_produce_pos[*processType].Fill(secondary->GetPosition().z());
+              }
+            } else {
+              G4cout << "Unknown photon process? " << secondary->GetCreatorProcess()->GetProcessName() << G4endl;
+            }
+          }
+        }
+
+        depositHitCollection->insert(hit);
+      }
     }
 
     handleOpticalPhoton(theStep,
@@ -80,14 +105,6 @@ public:
           b_ECAL_total[process]++;
           h_phot_produce_lambda[process].Fill(photWL);
           h_phot_produce_time[process].Fill(gTime / ns);
-          // h_phot_z_pos[process].Fill(zPos);
-          h_phot_angle_azimuthal[process].Fill(track->GetMomentum().phi() * 180. / M_PI);
-          h_phot_angle_polar[process].Fill(track->GetMomentum().theta() * 180. / M_PI);
-
-          const auto p = track->GetMomentum();
-          h_phot_init_x[process].Fill(p.x() / p.mag());
-          h_phot_init_y[process].Fill(p.y() / p.mag());
-
         }
 
         G4VPhysicalVolume *thePostPV = theStep->GetPostStepPoint()->GetPhysicalVolume();
@@ -111,18 +128,27 @@ public:
   // }
 
   void EndOfEvent(G4HCofThisEvent*) override {
-    impl->writeDimensions();
 
-    const unsigned int N = depositHitCollection->GetSize();
-    *b_hit_energy = std::vector<float>(N, 0.);
-    *b_hit_time   = std::vector<float>(N, 0.);
-    *b_hit_zPos   = std::vector<float>(N, 0.);
+    if (env.recordHits()) {
+      const unsigned int N = depositHitCollection->GetSize();
+      *b_hit_energy = std::vector<float>(N, 0.);
+      *b_hit_time   = std::vector<float>(N, 0.);
+      *b_hit_zPos   = std::vector<float>(N, 0.);
+      for (const ProcessType t : processTypes) {
+        b_hit_photons[t] = std::vector<int>(N, 0);
+        b_hit_detected[t] = std::vector<int>(N, 0);
+      }
 
-    for (unsigned int i = 0; i < N; i++) {
-      const EnergyDepositHit* hit = (*depositHitCollection)[i];
-      (*b_hit_energy)[i] = hit->GetIonEnergy();
-      (*b_hit_time  )[i] = hit->GetTime();
-      (*b_hit_zPos  )[i] = hit->GetPos();
+      for (unsigned int i = 0; i < N; i++) {
+        const EnergyDepositHit* hit = (*depositHitCollection)[i];
+        (*b_hit_energy)[i] = hit->GetIonEnergy() / GeV;
+        (*b_hit_time  )[i] = hit->GetTime() / ns;
+        (*b_hit_zPos  )[i] = hit->GetPos() / mm;
+        for (const ProcessType t : processTypes) {
+          b_hit_photons[t][i] = hit->photonCount()[t];
+          b_hit_detected[t][i] = hit->detectedPhotons()[t];
+        }
+      }
     }
   }
 
@@ -151,9 +177,6 @@ public:
 protected:
   const ConfigEnvironment& env;
   
-  float* b_crystalLength;
-  float* b_frontOffset;
-
 private:
   Impl* impl;
 
@@ -163,18 +186,16 @@ private:
   PerProcess<int> b_ECAL_exit;
   PerProcess<TH1F> h_phot_produce_lambda;
   PerProcess<TH1F> h_phot_produce_time;
-  // PerProcess<TH1F> h_phot_z_pos;
-  PerProcess<TH1F> h_phot_angle_azimuthal;
-  PerProcess<TH1F> h_phot_angle_polar;
-  PerProcess<TH1F> h_phot_init_x;
-  PerProcess<TH1F> h_phot_init_y;
+  PerProcess<TH1F> h_phot_delay_time;
 
   G4int EDHitCollectionID;
   EDHitCollection* depositHitCollection;
   std::vector<float>* b_hit_energy;
   std::vector<float>* b_hit_time; 
   std::vector<float>* b_hit_zPos;
-
+  PerProcess<std::vector<int>> b_hit_photons;
+  PerProcess<std::vector<int>> b_hit_detected;
+  PerProcess<TH1F> h_phot_produce_pos;
 };
 
 #endif

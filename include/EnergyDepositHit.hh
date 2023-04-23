@@ -7,6 +7,7 @@
 #include "G4THitsCollection.hh"
 #include "G4VHitsCollection.hh"
 #include "G4Allocator.hh"
+#include "PerProcessRecord.hh"
 
 /*
  * A hit that records the ionization energy deposited, the time of the hit,
@@ -32,10 +33,18 @@ public:
   G4double GetTime() const;
   G4double GetPos() const;
 
+  PerProcessRecord<G4int>& photonCount();
+  PerProcessRecord<G4int>& detectedPhotons();
+
+  const PerProcessRecord<G4int>& photonCount() const;
+  const PerProcessRecord<G4int>& detectedPhotons() const;
+
 private:
   G4double ionEnergy;
   G4double time;
   G4double zPos;
+  PerProcessRecord<G4int> nPhotons;
+  PerProcessRecord<G4int> mDetectedPhotons;
 };
 
 using EDHitCollection = G4THitsCollection<EnergyDepositHit>;

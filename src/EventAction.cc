@@ -32,22 +32,13 @@ namespace {
 
 template <typename SiPM>
 void averagePhotonArrivalTime() {
-  for (const ProcessType process : processTypes) {
-    float& time = CreateTree::Instance()->lookupBranch<float>(SiPM::BranchName("time", process));
-    const int detected = CreateTree::Instance()->lookupBranch<int>(SiPM::BranchName("detected", process));
-
-    if (time > 0) {
-      time /= static_cast<float>(detected);
-    } else {
-      time = -1.0;
-    }
-  }
 }
 
 }; // namespace ::
 
 
-EventAction::EventAction(const G4int &modulo) : printModulo(modulo), fDRHCID(-1)
+EventAction::EventAction(const G4int &modulo, const ConfigEnvironment& environ)
+  : printModulo(modulo), fDRHCID(-1), env(environ)
 {
   // Event branches
   b_event = CreateTree::Instance()->createBranch<int>("Event");
@@ -86,10 +77,9 @@ void EventAction::BeginOfEventAction(const G4Event *evt)
   convertThreeVector(*b_polarization, particle->GetPolarization());
 
   for (const ProcessType process : processTypes) {
-    CreateTree::Instance()->lookupBranch<float>(SD_sipmS::BranchName("time", process)) = 0;
-    CreateTree::Instance()->lookupBranch<float>(SD_sipmR::BranchName("time", process)) = 0;
-    CreateTree::Instance()->lookupBranch<float>(SD_sipmC::BranchName("time", process)) = 0;
-    CreateTree::Instance()->lookupBranch<float>(SD_sipmF::BranchName("time", process)) = 0;
+    for (const auto& branchName : env.activeSipmBranchNames()) {
+      CreateTree::Instance()->lookupBranch<float>(branchName("time", process)) = 0;
+    }
   }
 }
 
@@ -131,10 +121,19 @@ void EventAction::EndOfEventAction(const G4Event *evt)
 */
 
   // average photon arrival
-  averagePhotonArrivalTime<SD_sipmS>();
-  averagePhotonArrivalTime<SD_sipmR>();
-  averagePhotonArrivalTime<SD_sipmC>();
-  averagePhotonArrivalTime<SD_sipmF>();
+  for (const auto& branchName : env.activeSipmBranchNames()) {
+    for (const ProcessType process : processTypes) {
+      float& time = CreateTree::Instance()->lookupBranch<float>(branchName("time", process));
+      const int detected = CreateTree::Instance()->lookupBranch<int>(branchName("detected", process));
+
+      if (time > 0) {
+        time /= static_cast<float>(detected);
+      } else {
+        time = -1.0;
+      }
+    }
+  }
+
 
   CreateTree::Instance()->Fill();
 }

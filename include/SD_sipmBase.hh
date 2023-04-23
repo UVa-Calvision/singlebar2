@@ -2,6 +2,7 @@
 #define SD_sipmBase_h
 
 #include "SD_Base.hh"
+#include "PhotonTrackingInformation.hh"
 
 /*
  * Generic behavior for SiPM detectors.
@@ -20,6 +21,7 @@ public:
     b_average_time = BaseType::createFloat("time");
     h_phot_lambda = BaseType::createHistogram("phot_lambda", "Photon lambda;[nm]", 1250, 0., 1250.);
     h_phot_time = BaseType::createHistogram("phot_time", "Photon time;[ns]", 500, 0., 50.);
+    h_phot_creationPos = BaseType::createHistogram("phot_creationPos", "Photon Creation Position;[mm]", 100, 200., 400.);
   }
 
   void Initialize(G4HCofThisEvent*) override {}
@@ -32,6 +34,14 @@ public:
         b_average_time[process] += gTime;
         h_phot_lambda[process].Fill(photWL);
         h_phot_time[process].Fill(gTime);
+
+        PhotonTrackingInformation* info = (PhotonTrackingInformation*) theStep->GetTrack()->GetUserInformation();
+        if (info) {
+          h_phot_creationPos[process].Fill(info->initialPosition());
+          info->hit()->detectedPhotons()[process]++;
+        } else {
+          G4cerr << "SiPM photon doesn't have track info!\n"; 
+        }
 
         theStep->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
       });
@@ -65,6 +75,7 @@ private:
   PerProcess<float> b_average_time;
   PerProcess<TH1F> h_phot_lambda;
   PerProcess<TH1F> h_phot_time;
+  PerProcess<TH1F> h_phot_creationPos;
 };
 
 #endif

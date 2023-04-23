@@ -61,6 +61,7 @@
 
 #include "QGSP_BERT.hh"
 
+#include "ConfigEnvironment.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "DetectorConstruction.hh"
 #include "RunAction.hh"
@@ -69,7 +70,6 @@
 #include "EventAction.hh"
 #include "SteppingVerbose.hh"
 #include "CreateTree.hh"
-#include "ConfigEnvironment.hh"
 
 #ifdef G4VIS_USE
 #include "G4VisExecutive.hh"
@@ -142,7 +142,7 @@ int main(int argc,char** argv)
   // Create output tree
   //
   G4cout << "before creating tree" << G4endl;
-  CreateTree* mytree = new CreateTree ("tree");
+  CreateTree* mytree = new CreateTree ("tree", outfile);
   G4cout << "after creating tree" << G4endl;
   
   // Get runtime options
@@ -220,7 +220,7 @@ int main(int argc,char** argv)
   G4cout << ">>> Define RunAction::end <<<" << G4endl; 
   
   G4cout << ">>> Define EventAction::begin <<<" << G4endl; 
-  G4UserEventAction* event_action = new EventAction(printModulo);
+  G4UserEventAction* event_action = new EventAction(printModulo, env);
   runManager->SetUserAction(event_action);
   G4cout << ">>> Define EventAction::end <<<" << G4endl; 
   
@@ -299,7 +299,7 @@ int main(int argc,char** argv)
   if(MAKE_ROOTFILE) 
   {
     G4cout << "Writing tree to file " << filename << " ..." << G4endl;
-    mytree->Write (outfile) ;
+    mytree->Write () ;
     outfile->Close () ;
   }
   

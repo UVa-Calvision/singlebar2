@@ -1,10 +1,16 @@
 #include "ConfigEnvironment.hh"
 
+#include "SD_sipmR.hh"
+#include "SD_sipmC.hh"
+#include "SD_sipmS.hh"
+#include "SD_sipmF.hh"
+
+
 ConfigEnvironment::ConfigEnvironment(const std::string& configpath)
   : configFile(configpath)
 {
-  const int layerOption = configFile.read<int>("detector_layers");
-  switch (layerOption) {
+  vLayerOption = configFile.read<int>("detector_layers");
+  switch (vLayerOption) {
     case 1: // single layer
     case 2: // double layer
       vUseSipmR = false;
@@ -13,9 +19,11 @@ ConfigEnvironment::ConfigEnvironment(const std::string& configpath)
       vUseSipmR = true;
       break;
     default:
-      G4cerr << "<ConfigEnvironment>: Invalid detector layer option: " << layerOption << G4endl;
+      G4cerr << "<ConfigEnvironment>: Invalid detector layer option: " << vLayerOption << G4endl;
       exit(-1);
   }
+
+  vRecordHits = configFile.read<bool>("record_hits", false); 
 }
 
 ConfigFile& ConfigEnvironment::file() {
@@ -54,4 +62,21 @@ void ConfigEnvironment::SetFrontCrystalDimensions(G4double front, G4double lengt
 void ConfigEnvironment::SetRearCrystalDimensions(G4double front, G4double length) {
   vRearCrystalFront = front;
   vRearCrystalLength = length;
+}
+
+bool ConfigEnvironment::recordHits() const {
+  return vRecordHits;
+}
+
+std::vector<std::function<std::string(const std::string&, ProcessType)>>
+ConfigEnvironment::activeSipmBranchNames() const {
+  switch (vLayerOption) {
+    case 2:
+      return { SD_sipmF::BranchName, SD_sipmS::BranchName, SD_sipmC::BranchName };
+    case 3:
+      return { SD_sipmF::BranchName, SD_sipmS::BranchName, SD_sipmC::BranchName, SD_sipmR::BranchName };
+    case 1:
+    default:
+      return { SD_sipmS::BranchName, SD_sipmC::BranchName };
+  };
 }

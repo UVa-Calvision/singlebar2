@@ -4,7 +4,7 @@
 # initialization of G4GeneralParticleSource
 
 # beam
-/gps/energy 1 GeV
+/gps/energy 10 GeV
 /gps/particle mu-
 #/gps/particle gamma
 #/gps/particle pi-

@@ -1807,6 +1807,7 @@ G4Material *MyMaterials::PWO()
     ScintilYield[i] = 0.3 * MeV * ScintilYield[i] * ElectronEnergy_SCY[i];
 
   G4MaterialPropertiesTable *myMPT = new G4MaterialPropertiesTable();
+  myMPT->AddProperty("SLOWCOMPONENT", PhotonEnergy_FAST, FastComponent, nEntries_FAST); // Use same spectrum for slow as for fast
   myMPT->AddProperty("FASTCOMPONENT", PhotonEnergy_FAST, FastComponent, nEntries_FAST);
   myMPT->AddProperty("RINDEX", PhotonEnergy_RI, RefractiveIndex, nEntries_RI);
   myMPT->AddProperty("ABSLENGTH", PhotonEnergy_ABS, Absorption, nEntries_ABS);
@@ -1817,6 +1818,7 @@ G4Material *MyMaterials::PWO()
   myMPT->AddConstProperty("SLOWTIMECONSTANT", 15. * ns);
   myMPT->AddConstProperty("YIELDRATIO", 0.3);
   myMPT->AddConstProperty("FASTSCINTILLATIONRISETIME", 0.01 * ns); //careful on rise time
+  myMPT->AddConstProperty("SLOWSCINTILLATIONRISETIME", 0.01 * ns);
 
   mat->SetMaterialPropertiesTable(myMPT);
 

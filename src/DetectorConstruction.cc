@@ -518,9 +518,8 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
 
   auto sdman = G4SDManager::GetSDMpointer();
 
-  auto fSDsipmF = new SD_sipmF("/ECAL_sipmF");
-  sdman->AddNewDetector(fSDsipmF);
-  sipmFWindowL->SetSensitiveDetector(fSDsipmF);
+
+  // Always build rear xtal and SiPMs
 
   auto fSDsipmC = new SD_sipmC("/ECAL_sipmC");
   sdman->AddNewDetector(fSDsipmC);
@@ -530,23 +529,35 @@ G4VPhysicalVolume *DetectorConstruction::Construct()
   sdman->AddNewDetector(fSDsipmS);
   sipmSWindowL->SetSensitiveDetector(fSDsipmS);
 
-  auto fSDsipmR = new SD_sipmR("/ECAL_sipmR");
-  sdman->AddNewDetector(fSDsipmR);
-  sipmRWindowL->SetSensitiveDetector(fSDsipmR);
-
-  G4cout << "Ecal Front Start: " << layerPosition(layers, assemblyOffset, 1) << G4endl
-         << "Ecal Front End  : " << layerPosition(layers, assemblyOffset, 1) + ecal_front_length << G4endl;
-  env.SetFrontCrystalDimensions(z0 + layerPosition(layers, assemblyOffset, 1), ecal_front_length);
-  auto fSDCrystalF = new SD_CrystalF("/ECAL_CrystalF", env);
-  sdman->AddNewDetector(fSDCrystalF);
-  ecalCrystalL_f->SetSensitiveDetector(fSDCrystalF);
-
   G4cout << "Ecal Rear Start: " << layerPosition(layers, assemblyOffset, rearCrystalLayerIndex) << G4endl
          << "Ecal Rear End  : " << layerPosition(layers, assemblyOffset, rearCrystalLayerIndex) + ecal_rear_length << G4endl;
   env.SetRearCrystalDimensions(z0 + layerPosition(layers, assemblyOffset, rearCrystalLayerIndex), ecal_rear_length);
   auto fSDCrystalR = new SD_CrystalR("/ECAL_CrystalR", env);
   sdman->AddNewDetector(fSDCrystalR);
   ecalCrystalL_r->SetSensitiveDetector(fSDCrystalR);
+
+  // Build first xtal and F SiPM in double or R config
+  if (layerOption >= 2) {
+    auto fSDsipmF = new SD_sipmF("/ECAL_sipmF");
+    sdman->AddNewDetector(fSDsipmF);
+    sipmFWindowL->SetSensitiveDetector(fSDsipmF);
+
+    G4cout << "Ecal Front Start: " << layerPosition(layers, assemblyOffset, 1) << G4endl
+           << "Ecal Front End  : " << layerPosition(layers, assemblyOffset, 1) + ecal_front_length << G4endl;
+    env.SetFrontCrystalDimensions(z0 + layerPosition(layers, assemblyOffset, 1), ecal_front_length);
+    auto fSDCrystalF = new SD_CrystalF("/ECAL_CrystalF", env);
+    sdman->AddNewDetector(fSDCrystalF);
+    ecalCrystalL_f->SetSensitiveDetector(fSDCrystalF);
+  }
+
+  // Only build R SiPM if specified
+  if (layerOption >= 3) {
+    auto fSDsipmR = new SD_sipmR("/ECAL_sipmR");
+    sdman->AddNewDetector(fSDsipmR);
+    sipmRWindowL->SetSensitiveDetector(fSDsipmR);
+  }
+
+
 
   //-----------------------------------------------------
   //------------- Visualization attributes --------------

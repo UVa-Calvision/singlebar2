@@ -5,52 +5,48 @@ import ROOT as r
 import numpy as np
 import os, sys
 
-def makeGraph(ys, offset, length):
-  xs = np.arange(offset, offset + length, length / float(ys.shape[0]))
-  return r.TGraph(len(ys), xs, ys)
+def makeHist(name, title, offset, length):
+  return r.TH2D(name, title,
+                40, offset, offset + length,
+                40, 0.0, 0.01)
 
-f = r.TFile("test.root")
-tree = f.tree
+canvas = r.TCanvas("c", "c", 1600, 1000)
+canvas.Divide(2, 1)
 
-f_frontOffset = 0.
-f_crystalLength = 0.
-f_energy = np.array([])
+rFront = 217.5
+rLength = 180.0
 
-r_energy = np.array([])
-r_frontOffset = 0.
-r_crystalLength = 0.
+canvas.cd(1)
+hist_r = makeHist("energypos_hist_r", "Rear Energy x Position deposits", rFront, rLength)
 
-target_index = 3
-i = 0
-for event in tree:
-  if i == target_index:
-    print("Found bin {}".format(i))
-    print("Front:")
-    f_energy = np.array(event.ECAL_f_hit_energy).flatten('C').astype('float')
-    print(f_energy.shape[0])
-    f_frontOffset = event.ECAL_f_frontOffset
-    print(f_frontOffset)
-    f_crystalLength = event.ECAL_f_crystalLength
-    print(f_crystalLength)
+canvas.cd(2)
+hist_er = r.TH1D("energyavg_hist_r", "Rear Energy Deposit", 40, rFront, rFront + rLength)
 
-    print("Rear:")
-    r_energy = np.array(event.ECAL_r_hit_energy).flatten('C').astype('float')
-    print(r_energy.shape[0])
-    r_frontOffset = event.ECAL_r_frontOffset
-    print(r_frontOffset)
-    r_crystalLength = event.ECAL_r_crystalLength
-    print(r_crystalLength)
 
-    # total_energy = sum(event.ECAL_f_scin_bin_energy)
-    # print("Total energy: %f" % total_energy)
-    # print("Deposited energy: %f" % event.ECAL_f_depositedEnergy)
-    # print("Deposited ionizing energy: %f" % event.ECAL_f_depositedIonEnergy)
-  i += 1
+def processFile(filename):
+  print("Processing file: " + filename)
+  rFile = r.TFile(filename, "READ")
+  rTree = rFile.Get("tree")
 
-r_frontOffset -= f_frontOffset
-f_frontOffset -= f_frontOffset
+  for event in rTree:
+    for i in range(len(event.ECAL_r_hit_energy)):
+      pos = event.ECAL_r_hit_zPos[i]
+      energy = event.ECAL_r_hit_energy[i]
+      hist_r.Fill(pos, energy)
+      hist_er.Fill(pos, energy)
 
-# CONSTRUCT [POS, TIME] BINS FOR ENERGY DEPOSITS
+
+
+for filename in sys.argv[1:]:
+  processFile(filename)
+
+canvas.cd(1)
+hist_r.Draw("COLZ")
+
+canvas.cd(2)
+hist_er.Draw("B C")
+
+
 
 print('Hit return to exit')
 sys.stdout.flush() 
@@ -58,3 +54,7 @@ if sys.version_info.major==2:
     raw_input('')
 else:
     input()
+
+# save_filename = os.path.splitext(filename)[0] + ".png"
+# print("Saving to: " + save_filename)
+# canvas.Print(save_filename)

@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <memory>
 
+#include "TParameter.h"
 #include "TH2F.h"
 #include "TH3F.h"
 #include "TFile.h"
@@ -21,102 +22,31 @@
 class CreateTree
 {
 public:
-  CreateTree(const TString name);
+  CreateTree(const TString name, TFile* file);
 
   TTree *GetTree() const { return ftree; };
   TString GetName() const { return fname; };
    
   int Fill();
-  bool Write(TFile *);
+  bool Write();
   void Clear();
 
   static CreateTree *Instance() { return fInstance; };
   static CreateTree *fInstance;
 
-  // void AddEnergyDeposit(int index, float deposit);
-  // void AddScintillationPhoton(int index);
-  // void AddCerenkovPhoton(int index);
+  template <typename T>
+  void WriteObject(const T& value, const std::string& name) {
+    std::cout << "Writing parameter " << name << ": " << value << "\n";
+    TParameter<T> v(name.c_str(), value);
+    fFile->cd();
+    fFile->WriteTObject(&v);
+  }
 
-  /*
-  std::vector<float> *primaryMomT1; // Px Py Pz E
-  std::vector<float> *primaryPosT1; // x, y, z
-
-  std::vector<float> *primaryMomE1; // Px Py Pz E
-  std::vector<float> *primaryPosE1; // x, y, z
-  */
-  /*
-  int nTracksT1;
-  int nTracksT2;
-  int nTracksE1;
-  int nTracksE2;
-  int nTracksTRK[6];
-  */
-
-  /*
-  //integrated energy in each longitudinal layer
-                                   // using only [0] for now to store all f/r energy
-  //float depositedEnergyECAL_f[64];  // upgrade to store up to 8x8 module info
-  //float depositedEnergyECAL_r[64];  // to do: implement element testing to do this
-  float depositedEnergyECAL_f;
-  float depositedEnergyECAL_r;
-
-  //float depositedEnergyHCALAct;
-  //float depositedEnergyHCALPas;
-  //  float depositedEnergyServices;
-  float depositedEnergyEcalGap;
-  float depositedEnergyEcalDet;
-  //  float depositedEnergySolenoid;
-  float depositedEnergyWorld;
-
-  float depositedEnergyEcalFront;
-
-  //float depositedIonEnergyECAL_f[3];  // also modify to support 8x8
-  //float depositedIonEnergyECAL_r[3];
-  float depositedIonEnergyECAL_f;
-  float depositedIonEnergyECAL_r;
-  float depositedIonEnergyHCALAct;
-  float depositedIonEnergyHCALPas;
-  //  float depositedIonEnergyServices;
-  float depositedIonEnergyEcalGap;
-  float depositedIonEnergyEcalDet;
-  //  float depositedIonEnergySolenoid;
-  float depositedIonEnergyWorld;
-
-  float depositedElecEnergyECAL_f[3];
-  float depositedElecEnergyECAL_r[3];
-  //  float depositedElecEnergyHCALAct;
-  //  float depositedElecEnergyHCALPas;
-  //  float depositedElecEnergyServices;
-  float depositedElecEnergyEcalGap;
-  float depositedElecEnergyEcalDet;
-  //  float depositedElecEnergySolenoid;
-  float depositedElecEnergyWorld;
-
-  //store the energy deposition by components
-
-  float depositedEnergyECAL_absorb_f_particleID[8];
-  float depositedEnergyECAL_absorb_r_particleID[8];
-  float depositedIonEnergyECAL_absorb_f_particleID[8];
-  float depositedIonEnergyECAL_absorb_r_particleID[8];
-
-  float depositedEnergyECAL_scinti_f_particleID[8];
-  float depositedEnergyECAL_scinti_r_particleID[8];
-  float depositedIonEnergyECAL_scinti_f_particleID[8];
-  float depositedIonEnergyECAL_scinti_r_particleID[8];
-
-  float depositedEnergyECAL_cheren_f_particleID[8];
-  float depositedEnergyECAL_cheren_r_particleID[8];
-  float depositedIonEnergyECAL_cheren_f_particleID[8];
-  float depositedIonEnergyECAL_cheren_r_particleID[8];
-
-  int tot_phot_cer_ECAL_scinti_f_particleID[8];
-  int tot_phot_cer_ECAL_scinti_r_particleID[8];
-  int tot_phot_cer_ECAL_cheren_f_total;
-  int tot_phot_cer_ECAL_cheren_r_total;
-  int tot_phot_cer_ECAL_cheren_f_particleID[8];
-  int tot_phot_cer_ECAL_cheren_r_particleID[8];
-  int tot_phot_cer_HCAL;
-  */
+  // template <typename T>
+  // void WriteObject(const T& value, const std::string& name) {
+  //   const T temp = value;
+  //   WriteObject<T>(&temp, name);
+  // }
 
   // ----- Histograms
 
@@ -147,7 +77,8 @@ public:
 
 
 private:
-  TTree *ftree;
+  TTree* ftree;
+  TFile* fFile;
   TString fname;
 
   std::map<std::string, TH1F*> Histograms;

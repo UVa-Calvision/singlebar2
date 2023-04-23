@@ -4,11 +4,11 @@
 G4ThreadLocal G4Allocator<EnergyDepositHit>* EDHitAllocator = nullptr;
 
 EnergyDepositHit::EnergyDepositHit()
-  : ionEnergy(0.), time(0.), zPos(0.)
+  : EnergyDepositHit(0., 0., 0.) 
 {}
 
 EnergyDepositHit::EnergyDepositHit(G4double e, G4double t, G4double z)
-  : ionEnergy(e), time(t), zPos(z)
+  : ionEnergy(e), time(t), zPos(z), nPhotons()
 {}
 
 EnergyDepositHit::~EnergyDepositHit() {}
@@ -16,6 +16,12 @@ EnergyDepositHit::~EnergyDepositHit() {}
 G4double EnergyDepositHit::GetIonEnergy() const { return ionEnergy; }
 G4double EnergyDepositHit::GetTime() const { return time; }
 G4double EnergyDepositHit::GetPos() const { return zPos; }
+
+PerProcessRecord<G4int>& EnergyDepositHit::photonCount() { return nPhotons; }
+PerProcessRecord<G4int>& EnergyDepositHit::detectedPhotons() { return mDetectedPhotons; }
+
+const PerProcessRecord<G4int>& EnergyDepositHit::photonCount() const { return nPhotons; }
+const PerProcessRecord<G4int>& EnergyDepositHit::detectedPhotons() const { return mDetectedPhotons; }
 
 void EnergyDepositHit::Draw() {}
 void EnergyDepositHit::Print() {}

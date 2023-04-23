@@ -83,6 +83,9 @@ if __name__ == '__main__':
                         help="tee output to logfile and terminal",
                         action="store_true"
     )
+    parser.add_argument("-T", "--template", default="template.cfg",
+                        help="template.cfg file to use"
+    )
 
     
     args = parser.parse_args()
@@ -118,7 +121,7 @@ if __name__ == '__main__':
     run_mac = args.outdir+"/"+outfile+'.runmac'
     shutil.copy2('run.mac', run_mac)
     temp_cfg = args.outdir+"/"+outfile+'.cfg'
-    shutil.copy2('template.cfg',temp_cfg)
+    shutil.copy2(args.template,temp_cfg)
     outfile=args.outdir+"/"+outfile
     logfile=outfile+".log"
 

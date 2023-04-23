@@ -9,7 +9,8 @@ CreateTree *CreateTree::fInstance = NULL;
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
-CreateTree::CreateTree(const TString name)
+CreateTree::CreateTree(const TString name, TFile* file)
+  : fFile(file)
 {
   if (fInstance)
   {
@@ -19,34 +20,6 @@ CreateTree::CreateTree(const TString name)
   this->fInstance = this;
   this->fname = name;
   this->ftree = new TTree(name, name);
-
-  //---------------------------------------
-  //------------- Parameters --------------
-  //---------------------------------------
-
-  /*
-
-  //integrated per longitudinal layer
-  this->GetTree()->Branch("depositedEnergyEcalFront",&this->depositedEnergyEcalFront,"depositedEnergyEcalFront/F");
-
-
-  this->GetTree()->Branch("depositedEnergyECAL_f", &this->depositedEnergyECAL_f, "depositedEnergyECAL_f/F");
-  this->GetTree()->Branch("depositedEnergyECAL_r", &this->depositedEnergyECAL_r, "depositedEnergyECAL_r/F");
-  this->GetTree()->Branch("depositedEnergyWorld", &this->depositedEnergyWorld, "depositedEnergyWorld/F");
-  this->GetTree()->Branch("depositedEnergyEcalGap", &this->depositedEnergyEcalGap, "depositedEnergyEcalGap/F");
-  this->GetTree()->Branch("depositedEnergyEcalDet", &this->depositedEnergyEcalDet, "depositedEnergyEcalDet/F");
-  this->GetTree()->Branch("depositedIonEnergyECAL_f", &this->depositedIonEnergyECAL_f, "depositedIonEnergyECAL_f/F");
-  this->GetTree()->Branch("depositedIonEnergyECAL_r", &this->depositedIonEnergyECAL_r, "depositedIonEnergyECAL_r/F");
-  this->GetTree()->Branch("depositedIonEnergyWorld", &this->depositedIonEnergyWorld, "depositedIonEnergyWorld/F");
-  this->GetTree()->Branch("depositedIonEnergyEcalGap", &this->depositedIonEnergyEcalGap, "depositedIonEnergyEcalGap/F");
-  this->GetTree()->Branch("depositedIonEnergyEcalDet", &this->depositedIonEnergyEcalDet, "depositedIonEnergyEcalDet/F");
-  this->GetTree()->Branch("depositedElecEnergyECAL_f", &this->depositedElecEnergyECAL_f, "depositedElecEnergyECAL_f[3]/F");
-  this->GetTree()->Branch("depositedElecEnergyECAL_r", &this->depositedElecEnergyECAL_r, "depositedElecEnergyECAL_r[3]/F");
-  this->GetTree()->Branch("depositedElecEnergyWorld", &this->depositedElecEnergyWorld, "depositedElecEnergyWorld/F");
-  this->GetTree()->Branch("depositedElecEnergyEcalGap", &this->depositedElecEnergyEcalGap, "depositedElecEnergyEcalGap/F");
-  this->GetTree()->Branch("depositedElecEnergyEcalDet", &this->depositedElecEnergyEcalDet, "depositedElecEnergyEcalDet/F");
-
-  */
 
   this->Clear();
 }
@@ -58,9 +31,9 @@ int CreateTree::Fill()
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
-bool CreateTree::Write(TFile *outfile)
+bool CreateTree::Write()
 {
-  outfile->cd();
+  fFile->cd();
   ftree->Write();
 
   for (auto&& [_, h]: Histograms) {
@@ -72,71 +45,6 @@ bool CreateTree::Write(TFile *outfile)
 
 void CreateTree::Clear()
 {
-  /*
-  nTracksT1 = 0;
-  nTracksT2 = 0;
-  nTracksE1 = 0;
-  nTracksE2 = 0;
-
-  for (int iLayer = 0; iLayer < 6; iLayer++)
-  {
-    nTracksTRK[iLayer] = 0;
-  }
-  */
-
-  /*
-  for (int i = 0; i < 3; i++){
-    depositedEnergyECAL_f[i] = 0.;
-    depositedEnergyECAL_r[i] = 0.;
-  }
-  */
-  // depositedEnergyECAL_f = 0.;
-  // depositedEnergyECAL_r = 0.;
-  //  depositedEnergyHCALAct = 0.;
-  //  depositedEnergyHCALPas = 0.;
-  // depositedEnergyWorld = 0.;
-  //  depositedEnergyServices = 0.;
-  // depositedEnergyEcalGap = 0.;
-  // depositedEnergyEcalDet = 0.;
-  //  depositedEnergySolenoid = 0.;
-
-  // depositedIonEnergyECAL_f=0;
-  // depositedIonEnergyECAL_r=0;
-  /*
-  for (int i = 0; i < 3; i++){
-    depositedIonEnergyECAL_f[i] = 0.;
-    depositedIonEnergyECAL_r[i] = 0.;
-    }
-  */
-  //  depositedIonEnergyHCALAct = 0.;
-  //  depositedIonEnergyHCALPas = 0.;
-  // depositedIonEnergyWorld = 0.;
-  //  depositedIonEnergyServices = 0.;
-  // depositedIonEnergyEcalGap = 0.;
-  // depositedIonEnergyEcalDet = 0.;
-  //  depositedIonEnergySolenoid = 0.;
-
-  // for (int i = 0; i < 3; i++){
-  //   depositedElecEnergyECAL_f[i] = 0.;
-  //   depositedElecEnergyECAL_r[i] = 0.;
-  // }
-  //  depositedElecEnergyHCALAct = 0.;
-  //  depositedElecEnergyHCALPas = 0.;
-  // depositedElecEnergyWorld = 0.;
-  //  depositedElecEnergyServices = 0.;
-  // depositedElecEnergyEcalGap = 0.;
-  // depositedElecEnergyEcalDet = 0.;
-  //  depositedElecEnergySolenoid = 0.;
-
-  // tot_phot_cer_HCAL = 0.;
-
-  /*
-  for (int iLayer = 0; iLayer < 6; iLayer++)
-  {
-    Edep_Tracker_layer[iLayer] = 0.;
-  }
-  */
-  
   for (auto&& [_, f] : TreeFloats) {
     *f = 0.;
   }

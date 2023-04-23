@@ -8,6 +8,7 @@
 #include "globals.hh"
 #include <vector>
 #include "CreateTree.hh"
+#include "ConfigEnvironment.hh"
 
 const G4int kDim = 2;
 
@@ -17,7 +18,7 @@ class G4Event;
 class EventAction : public G4UserEventAction
 {
 public:
-  EventAction(const G4int& modulo);
+  EventAction(const G4int& modulo, const ConfigEnvironment& environ);
   ~EventAction();
   
   void BeginOfEventAction(const G4Event*);
@@ -34,6 +35,8 @@ private:
   G4int printModulo;
 //  G4int fDRHCID_f;
   G4int fDRHCID;
+
+  const ConfigEnvironment& env;
 };
 
 

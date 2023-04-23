@@ -17,6 +17,8 @@
 #include "G4SDManager.hh"
 #include "G4UnitsTable.hh"
 
+#include "PhotonTrackingInformation.hh"
+
 #include <iostream>
 #include <fstream>
 #include <vector>

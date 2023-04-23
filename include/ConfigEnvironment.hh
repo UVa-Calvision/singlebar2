@@ -4,6 +4,7 @@
 #include "ConfigFile.hh"
 // #include "CreateTree.hh"
 #include "G4ios.hh"
+#include "PerProcessRecord.hh"
 
 class ConfigEnvironment {
 public:
@@ -24,12 +25,20 @@ public:
   void SetFrontCrystalDimensions(G4double front, G4double length);
   void SetRearCrystalDimensions(G4double front, G4double length);
 
+  std::vector<std::function<std::string(const std::string&,ProcessType)>> activeSipmBranchNames() const;
+
+  // Options
+  bool recordHits() const;
+
 private:
   ConfigFile configFile;
   
+  int vLayerOption;
   bool vUseSipmR;
   G4double vFrontCrystalLength, vRearCrystalLength;
   G4double vFrontCrystalFront, vRearCrystalFront;
+
+  bool vRecordHits;
 };
 
 #endif

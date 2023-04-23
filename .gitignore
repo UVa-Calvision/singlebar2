@@ -9,3 +9,6 @@ G4History.macro
 *~
 *#
 CV_Testbeam
+results
+notes.txt
+.gitignore

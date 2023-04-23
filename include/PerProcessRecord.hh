@@ -8,13 +8,14 @@
 #include "G4VSensitiveDetector.hh"
 #include "G4ParticleDefinition.hh"
 #include "CreateTree.hh"
-#include "TrackingAction.hh"
-#include "SteppingAction.hh"
 #include "G4Step.hh"
 #include "G4Track.hh"
 #include "G4VTouchable.hh"
 #include "G4UnitsTable.hh"
 #include "G4SystemOfUnits.hh"
+#include "MyMaterials.hh"
+#include "G4OpticalPhoton.hh"
+#include "G4VProcess.hh"
 
 enum class ProcessType : unsigned int {
   Scin = 0,
@@ -31,6 +32,10 @@ struct PerProcess {
   PerProcess() : values({nullptr, nullptr}) {}
 
   constexpr T& operator[](ProcessType t) {
+    return *(values[static_cast<unsigned int>(t)]);
+  }
+
+  constexpr const T& operator[](ProcessType t) const {
     return *(values[static_cast<unsigned int>(t)]);
   }
 
@@ -65,6 +70,24 @@ private:
     }
     return vals;
   }
+};
+
+// Used for recording actual types in a data structure (doesn't redirect through pointers)
+template <typename T>
+class PerProcessRecord {
+public:
+  PerProcessRecord() : values({T{}, T{}}) {}
+
+  constexpr T& operator[](ProcessType t) {
+    return values[static_cast<unsigned int>(t)];
+  }
+
+  constexpr const T& operator[](ProcessType t) const {
+    return values[static_cast<unsigned int>(t)];
+  }
+
+private:
+  std::array<T, 2> values;
 };
 
 /*

@@ -3,7 +3,7 @@
 std::optional<ProcessType> readProcess(const G4String& processName) {
   if (processName == "Cerenkov") {
     return ProcessType::Ceren;
-  } else if (processName == "Scintilation") {
+  } else if (processName == "Scintillation") {
     return ProcessType::Scin;
   } else {
     return std::nullopt;
